@@ -1,16 +1,41 @@
-import { type Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 
 import { Button } from '@/components/Button'
 import { TextField } from '@/components/Fields'
 import { Logo } from '@/components/Logo'
 import { SlimLayout } from '@/components/SlimLayout'
-
-export const metadata: Metadata = {
-  title: 'Sign In',
-}
+import { useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 export default function Login() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const emailFromUrl = searchParams.get('email') || ''
+
+  const [email, setEmail] = useState(emailFromUrl)
+  const [password, setPassword] = useState('')
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    })
+
+    if (res.ok) {
+      router.push('/dashboard')
+    } else {
+      alert('Login failed')
+    }
+  }
+
   return (
     <SlimLayout>
       <div className="flex">
@@ -31,12 +56,14 @@ export default function Login() {
         </Link>{' '}
         for a free trial.
       </p>
-      <form action="#" className="mt-10 grid grid-cols-1 gap-y-8">
+      <form onSubmit={handleSubmit} className="mt-10 grid grid-cols-1 gap-y-8">
         <TextField
           label="Email address"
           name="email"
           type="email"
           autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
         <TextField
@@ -44,6 +71,8 @@ export default function Login() {
           name="password"
           type="password"
           autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
         <div>

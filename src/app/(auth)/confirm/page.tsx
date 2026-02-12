@@ -2,17 +2,22 @@
 
 import Link from 'next/link'
 
-import { Button } from '@/components/Button'
-import { SelectField, TextField } from '@/components/Fields'
-import { Logo } from '@/components/Logo'
-import { SlimLayout } from '@/components/SlimLayout'
-import { useRouter } from 'next/navigation'
-import { Alert } from '@/components/Alert'
 import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Logo } from '@/components/Logo'
+import { TextField } from '@/components/Fields'
+import { Button } from '@/components/Button'
+import { SlimLayout } from '@/components/SlimLayout'
+import { Alert } from '@/components/Alert'
 
-export default function Register() {
+export default function Confirm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const emailFromUrl = searchParams.get('email') || ''
 
+  // Handle Form Value states
+  const [email, setEmail] = useState(emailFromUrl)
+  const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
 
   // Handle whether the alert is shown, and in what state
@@ -21,37 +26,28 @@ export default function Register() {
     message: string
   } | null>(null)
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    setLoading(true);
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setLoading(true)
 
-    const form = new FormData(e.currentTarget)
-
-    const payload = {
-      first_name: form.get('first_name'),
-      last_name: form.get('last_name'),
-      email: form.get('email'),
-      password: form.get('password'),
-    }
-
-    const res = await fetch('/api/auth/register', {
+    const res = await fetch('/api/auth/confirm', {
       method: 'POST',
-      body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code }),
     })
     setLoading(false)
 
     if (res.ok) {
       setAlert({
-        type: 'info',
-        message: 'A confirmation code has been sent to your email',
+        type: 'success',
+        message: 'Account confirmed successfully!',
       })
 
-      router.push('/confirm?email=' + payload.email)
+      router.push('/login?email=' + email)
     } else {
       setAlert({
         type: 'error',
-        message: 'Unable to send Confirmation Code.',
+        message: 'Invalid or expired confirmation code.',
       })
     }
   }
@@ -85,45 +81,22 @@ export default function Register() {
           className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
         >
           <TextField
-            label="First name"
-            name="first_name"
-            type="text"
-            autoComplete="given-name"
-            required
-          />
-          <TextField
-            label="Last name"
-            name="last_name"
-            type="text"
-            autoComplete="family-name"
-            required
-          />
-          <TextField
-            className="col-span-full"
-            label="Email address"
+            label="Email"
             name="email"
-            type="email"
-            autoComplete="email"
+            type="text"
+            placeholder={'Email'}
+            value={emailFromUrl}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
           <TextField
-            className="col-span-full"
-            label="Password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
+            label="Confirmation Code"
+            name="confirmation_code"
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
             required
           />
-          {/*<SelectField*/}
-          {/*  className="col-span-full"*/}
-          {/*  label="How did you hear about us?"*/}
-          {/*  name="referral_source"*/}
-          {/*>*/}
-          {/*  <option>AltaVista search</option>*/}
-          {/*  <option>Super Bowl commercial</option>*/}
-          {/*  <option>Our route 34 city bus ad</option>*/}
-          {/*  <option>The “Never Use This” podcast</option>*/}
-          {/*</SelectField>*/}
           <div className="col-span-full">
             <Button
               type="submit"
@@ -137,7 +110,7 @@ export default function Register() {
                   LoadingCircle()
                 ) : (
                   <>
-                    Sign up <span aria-hidden="true">&rarr;</span>
+                    Confirm account <span aria-hidden="true">&rarr;</span>
                   </>
                 )}
               </span>
@@ -148,6 +121,8 @@ export default function Register() {
     </>
   )
 }
+
+
 
 // Graphics for spinner when element is loading
 function LoadingCircle() {

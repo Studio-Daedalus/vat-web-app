@@ -10,6 +10,7 @@
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.988.0",
     "@headlessui/react": "^2.2.6",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.15",
