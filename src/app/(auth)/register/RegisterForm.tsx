@@ -22,8 +22,8 @@ export default function Register() {
   } | null>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    setLoading(true)
     e.preventDefault()
+    setLoading(true)
 
     const form = new FormData(e.currentTarget)
 
@@ -42,17 +42,10 @@ export default function Register() {
     setLoading(false)
 
     if (res.ok) {
-      setAlert({
-        type: 'info',
-        message: 'A confirmation code has been sent to your email',
-      })
-
+      setAlert({ type: 'info', message: 'A confirmation code has been sent to your email'})
       router.push('/confirm?email=' + payload.email)
     } else {
-      setAlert({
-        type: 'error',
-        message: 'Unable to send Confirmation Code.',
-      })
+      setAlert({ type: 'error', message: 'Unable to send Confirmation Code.'})
     }
   }
 

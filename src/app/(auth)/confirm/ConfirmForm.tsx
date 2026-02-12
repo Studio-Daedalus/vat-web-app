@@ -38,17 +38,10 @@ export default function ConfirmForm() {
     setLoading(false)
 
     if (res.ok) {
-      setAlert({
-        type: 'success',
-        message: 'Account confirmed successfully!',
-      })
-
+      setAlert({type: 'success', message: 'Account confirmed successfully!'})
       router.push('/login?email=' + email)
     } else {
-      setAlert({
-        type: 'error',
-        message: 'Invalid or expired confirmation code.',
-      })
+      setAlert({type: 'error', message: 'Invalid or expired confirmation code.'})
     }
   }
 

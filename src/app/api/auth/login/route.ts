@@ -23,10 +23,27 @@ export async function POST(req: Request) {
   try {
     const result = await client.send(command)
 
-    return NextResponse.json({
-      ok: true,
-      tokens: result.AuthenticationResult,
+    const response = NextResponse.json({ ok: true })
+
+    // Save the id-token JWT in the cookies list.
+    const idToken = result.AuthenticationResult?.IdToken
+    response.cookies.set('id-token', idToken!, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
     })
+
+    // Save the access-token JWT in the cookies list.
+    const accessToken = result.AuthenticationResult?.AccessToken
+    response.cookies.set('access-token', accessToken!, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    })
+
+    return response
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Login failed' }, { status: 400 })
