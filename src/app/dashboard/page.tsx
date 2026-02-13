@@ -198,7 +198,7 @@ function HeartIcon() {
 /* Date Formatter */
 /* -------------------------------------------------- */
 
-export function formatPrettyDate(epoch: number): string {
+function formatPrettyDate(epoch: number): string {
   const date = new Date(epoch * 1000)
   const day = date.getDate()
   const year = date.getFullYear()
