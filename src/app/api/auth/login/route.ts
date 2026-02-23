@@ -43,6 +43,15 @@ export async function POST(req: Request) {
       path: '/',
     })
 
+    // Save the refresh-token JWT in the cookies list.
+    const refreshToken = result.AuthenticationResult?.RefreshToken
+    response.cookies.set('refresh-token', refreshToken!, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    })
+
     return response
   } catch (err) {
     console.error(err)
