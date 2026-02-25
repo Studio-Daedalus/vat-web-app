@@ -8,7 +8,7 @@ export async function GET() {
     const token = cookieStore.get('id-token')
 
     const res = await fetch(
-      'https://ukemh71u1e.execute-api.eu-west-2.amazonaws.com/dev/user',
+      'https://0363asb5xk.execute-api.eu-west-2.amazonaws.com/dev/user',
       {
         headers: {
           Authorization: token ? `Bearer ${token.value}` : '',

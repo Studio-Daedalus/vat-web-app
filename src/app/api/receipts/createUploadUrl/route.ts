@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     const res = await fetchApiWithAutoRefresh(
-      'https://ukemh71u1e.execute-api.eu-west-2.amazonaws.com/dev/receipts/uploadURL',
+      'https://0363asb5xk.execute-api.eu-west-2.amazonaws.com/dev/receipts/uploadURL',
       {
         method: 'POST',
         headers: {

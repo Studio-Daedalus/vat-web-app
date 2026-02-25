@@ -10,6 +10,34 @@ type CreateUploadUrlResponse = {
   expiresInSecs?: number
 }
 
+function guessFileType(file: File): string {
+  const name = file.name.toLowerCase()
+
+  // Get extension (everything after last ".")
+  const parts = name.split('.')
+  if (parts.length < 2) return ''
+
+  const ext = parts.pop()
+  console.log('ext: ', ext)
+
+  // Map extensions → MIME types
+  const mimeMap: Record<string, string> = {
+    jpg: 'jpg',
+    jpeg: 'jpeg',
+    png: 'png',
+    webp: 'webp',
+    gif: 'gif',
+    pdf: 'pdf',
+    txt: 'txt',
+    csv: 'csv',
+    json: 'json',
+    heic: 'heic',
+    svg: 'svg',
+  }
+
+  return mimeMap[ext ?? ''] ?? ''
+}
+
 function guessContentType(file: File): string {
   if (file.type) return file.type
   const name = file.name.toLowerCase()
@@ -81,7 +109,7 @@ export default function ReceiptUploader() {
       const createRes = await fetch('/api/receipts/createUploadUrl', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, contentType }),
+        body: JSON.stringify({ filename: 'original.' + guessFileType(file), contentType }),
       })
 
       const createData =
