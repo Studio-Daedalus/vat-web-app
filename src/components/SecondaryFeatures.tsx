@@ -6,9 +6,10 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import clsx from 'clsx'
 
 import { Container } from '@/components/Container'
-import screenshotContacts from '@/images/screenshots/contacts.png'
+// Using existing image paths from your template
+import screenshotReporting from '@/images/screenshots/profit-loss.png'
 import screenshotInventory from '@/images/screenshots/inventory.png'
-import screenshotProfitLoss from '@/images/screenshots/profit-loss.png'
+import screenshotContacts from '@/images/screenshots/contacts.png'
 
 interface Feature {
   name: React.ReactNode
@@ -20,87 +21,48 @@ interface Feature {
 
 const features: Array<Feature> = [
   {
-    name: 'Reporting',
-    summary: 'Stay on top of things with always up-to-date reporting features.',
+    name: 'Threshold Monitoring',
+    summary: 'Never get caught off-guard by the £90k VAT limit.',
     description:
-      'We talked about reporting in the section above but we needed three items here, so mentioning it one more time for posterity.',
-    image: screenshotProfitLoss,
-    icon: function ReportingIcon() {
-      let id = useId()
+      'Docket tracks your rolling 12-month turnover and alerts you well before you reach mandatory HMRC registration limits.',
+    image: screenshotReporting,
+    icon: function ThresholdIcon() {
       return (
-        <>
-          <defs>
-            <linearGradient
-              id={id}
-              x1="11.5"
-              y1={18}
-              x2={36}
-              y2="15.5"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset=".194" stopColor="#fff" />
-              <stop offset={1} stopColor="#6692F1" />
-            </linearGradient>
-          </defs>
-          <path
-            d="m30 15-4 5-4-11-4 18-4-11-4 7-4-5"
-            stroke={`url(#${id})`}
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </>
+        <path
+          d="M8 24V12M18 24V8M28 24V16"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
       )
     },
   },
   {
-    name: 'Inventory',
-    summary:
-      'Never lose track of what’s in stock with accurate inventory tracking.',
+    name: 'MTD-Compatible Export',
+    summary: 'Seamless handovers for your accountant or HMRC.',
     description:
-      'We don’t offer this as part of our software but that statement is inarguably true. Accurate inventory tracking would help you for sure.',
+      'Generate structured, Making Tax Digital (MTD) ready exports that integrate perfectly with your final submission workflow.',
     image: screenshotInventory,
-    icon: function InventoryIcon() {
+    icon: function MTDIcon() {
       return (
-        <>
-          <path
-            opacity=".5"
-            d="M8 17a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2Z"
-            fill="#fff"
-          />
-          <path
-            opacity=".3"
-            d="M8 24a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2Z"
-            fill="#fff"
-          />
-          <path
-            d="M8 10a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2Z"
-            fill="#fff"
-          />
-        </>
+        <path
+          d="M10 20L18 28L30 12"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+        />
       )
     },
   },
   {
-    name: 'Contacts',
-    summary:
-      'Organize all of your contacts, service providers, and invoices in one place.',
+    name: 'Edge-Case Logic',
+    summary: 'Expert guidance on reverse charges and mixed-use expenses.',
     description:
-      'This also isn’t actually a feature, it’s just some friendly advice. We definitely recommend that you do this, you’ll feel really organized and professional.',
+      'Navigate complex scenarios with conservative, HMRC-aligned logic designed specifically for UK micro-businesses.',
     image: screenshotContacts,
-    icon: function ContactsIcon() {
+    icon: function LogicIcon() {
       return (
-        <>
-          <path
-            opacity=".5"
-            d="M25.778 25.778c.39.39 1.027.393 1.384-.028A11.952 11.952 0 0 0 30 18c0-6.627-5.373-12-12-12S6 11.373 6 18c0 2.954 1.067 5.659 2.838 7.75.357.421.993.419 1.384.028.39-.39.386-1.02.036-1.448A9.959 9.959 0 0 1 8 18c0-5.523 4.477-10 10-10s10 4.477 10 10a9.959 9.959 0 0 1-2.258 6.33c-.35.427-.354 1.058.036 1.448Z"
-            fill="#fff"
-          />
-          <path
-            d="M12 28.395V28a6 6 0 0 1 12 0v.395A11.945 11.945 0 0 1 18 30c-2.186 0-4.235-.584-6-1.605ZM21 16.5c0-1.933-.5-3.5-3-3.5s-3 1.567-3 3.5 1.343 3.5 3 3.5 3-1.567 3-3.5Z"
-            fill="#fff"
-          />
-        </>
+        <circle cx="18" cy="18" r="10" stroke="currentColor" strokeWidth={2} />
       )
     },
   },
@@ -117,31 +79,36 @@ function Feature({
 }) {
   return (
     <div
-      className={clsx(className, !isActive && 'opacity-75 hover:opacity-100')}
+      className={clsx(
+        className,
+        !isActive && 'opacity-60 transition-opacity hover:opacity-100',
+      )}
       {...props}
     >
       <div
         className={clsx(
-          'w-9 rounded-lg',
-          isActive ? 'bg-blue-600' : 'bg-slate-500',
+          'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+          isActive
+            ? 'bg-[#2D4A2D] text-[#D1EAD1]'
+            : 'bg-[#E2E8E2] text-[#4F634F]',
         )}
       >
-        <svg aria-hidden="true" className="h-9 w-9" fill="none">
+        <svg aria-hidden="true" className="h-6 w-6" fill="none">
           <feature.icon />
         </svg>
       </div>
       <h3
         className={clsx(
           'mt-6 text-sm font-medium',
-          isActive ? 'text-blue-600' : 'text-slate-600',
+          isActive ? 'text-[#2D4A2D]' : 'text-[#4F634F]',
         )}
       >
         {feature.name}
       </h3>
-      <p className="mt-2 font-display text-xl text-slate-900">
+      <p className="mt-2 font-display text-xl text-[#1A2E1A]">
         {feature.summary}
       </p>
-      <p className="mt-4 text-sm text-slate-600">{feature.description}</p>
+      <p className="mt-4 text-sm text-[#4F634F]">{feature.description}</p>
     </div>
   )
 }
@@ -151,10 +118,10 @@ function FeaturesMobile() {
     <div className="-mx-4 mt-20 flex flex-col gap-y-10 overflow-hidden px-4 sm:-mx-6 sm:px-6 lg:hidden">
       {features.map((feature) => (
         <div key={feature.summary}>
-          <Feature feature={feature} className="mx-auto max-w-2xl" isActive />
+          <Feature feature={feature} isActive className="mx-auto max-w-2xl" />
           <div className="relative mt-10 pb-10">
-            <div className="absolute -inset-x-4 top-8 bottom-0 bg-slate-200 sm:-inset-x-6" />
-            <div className="relative mx-auto w-211 overflow-hidden rounded-xl bg-white shadow-lg ring-1 shadow-slate-900/5 ring-slate-500/10">
+            <div className="absolute -inset-x-4 top-8 bottom-0 bg-[#F2F5F2] sm:-inset-x-6" />
+            <div className="relative mx-auto w-[52.75rem] overflow-hidden rounded-[2rem] bg-white shadow-lg ring-1 shadow-green-900/5 ring-green-500/10">
               <Image
                 className="w-full"
                 src={feature.image}
@@ -176,36 +143,29 @@ function FeaturesDesktop() {
         <>
           <TabList className="grid grid-cols-3 gap-x-8">
             {features.map((feature, featureIndex) => (
-              <Feature
-                key={feature.summary}
-                feature={{
-                  ...feature,
-                  name: (
-                    <Tab className="data-selected:not-data-focus:outline-hidden">
-                      <span className="absolute inset-0" />
-                      {feature.name}
-                    </Tab>
-                  ),
-                }}
-                isActive={featureIndex === selectedIndex}
-                className="relative"
-              />
+              <Tab key={feature.summary} className="focus:outline-none">
+                <Feature
+                  feature={feature}
+                  isActive={featureIndex === selectedIndex}
+                  className="text-left"
+                />
+              </Tab>
             ))}
           </TabList>
-          <TabPanels className="relative mt-20 overflow-hidden rounded-4xl bg-slate-200 px-14 py-16 xl:px-16">
-            <div className="-mx-5 flex">
+          <TabPanels className="relative mt-20 overflow-hidden rounded-[2.5rem] bg-[#F2F5F2] px-14 py-16 xl:px-16">
+            <div className="flex">
               {features.map((feature, featureIndex) => (
                 <TabPanel
                   static
                   key={feature.summary}
                   className={clsx(
-                    'px-5 transition duration-500 ease-in-out data-selected:not-data-focus:outline-hidden',
-                    featureIndex !== selectedIndex && 'opacity-60',
+                    'px-5 transition duration-500 ease-in-out focus:outline-none',
+                    featureIndex !== selectedIndex && 'opacity-0',
                   )}
                   style={{ transform: `translateX(-${selectedIndex * 100}%)` }}
                   aria-hidden={featureIndex !== selectedIndex}
                 >
-                  <div className="w-211 overflow-hidden rounded-xl bg-white shadow-lg ring-1 shadow-slate-900/5 ring-slate-500/10">
+                  <div className="w-[52.75rem] overflow-hidden rounded-[2rem] bg-white shadow-xl ring-1 shadow-green-900/5 ring-green-500/10">
                     <Image
                       className="w-full"
                       src={feature.image}
@@ -216,7 +176,6 @@ function FeaturesDesktop() {
                 </TabPanel>
               ))}
             </div>
-            <div className="pointer-events-none absolute inset-0 rounded-4xl ring-1 ring-slate-900/10 ring-inset" />
           </TabPanels>
         </>
       )}
@@ -228,17 +187,17 @@ export function SecondaryFeatures() {
   return (
     <section
       id="secondary-features"
-      aria-label="Features for simplifying everyday business tasks"
-      className="pt-20 pb-14 sm:pt-32 sm:pb-20 lg:pb-32"
+      aria-label="Features for UK small businesses"
+      className="bg-[#F9FBF9] pt-20 pb-14 sm:pt-32 sm:pb-20 lg:pb-32"
     >
       <Container>
         <div className="mx-auto max-w-2xl md:text-center">
-          <h2 className="font-display text-3xl tracking-tight text-slate-900 sm:text-4xl">
-            Simplify everyday business tasks.
+          <h2 className="font-display text-3xl tracking-tight text-[#1A2E1A] sm:text-4xl">
+            Built for UK freelancers and micro-businesses.
           </h2>
-          <p className="mt-4 text-lg tracking-tight text-slate-700">
-            Because you’d probably be a little confused if we suggested you
-            complicate your everyday business tasks instead.
+          <p className="mt-4 text-lg tracking-tight text-[#4F634F]">
+            Docket handles the technical VAT edge cases so you can focus on
+            running your business.
           </p>
         </div>
         <FeaturesMobile />

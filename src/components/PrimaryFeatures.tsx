@@ -6,36 +6,37 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import clsx from 'clsx'
 
 import { Container } from '@/components/Container'
+// Keeping original imports for compatibility
 import backgroundImage from '@/images/background-features.jpg'
-import screenshotExpenses from '@/images/screenshots/expenses.png'
-import screenshotPayroll from '@/images/screenshots/payroll.png'
-import screenshotReporting from '@/images/screenshots/reporting.png'
-import screenshotVatReturns from '@/images/screenshots/vat-returns.png'
+import screenshotReceipts from '@/images/screenshots/expenses.png'
+import screenshotWarnings from '@/images/screenshots/payroll.png'
+import screenshotExplainer from '@/images/screenshots/reporting.png'
+import screenshotAudit from '@/images/screenshots/vat-returns.png'
 
 const features = [
   {
-    title: 'Payroll',
+    title: 'Receipt Analysis',
     description:
-      "Keep track of everyone's salaries and whether or not they've been paid. Direct deposit not supported.",
-    image: screenshotPayroll,
+      'Extract vendor data, dates, and VAT rates automatically to determine reclaimability based on UK rules[cite: 11].',
+    image: screenshotReceipts,
   },
   {
-    title: 'Claim expenses',
+    title: 'VAT Risk Warnings',
     description:
-      "All of your receipts organized into one place, as long as you don't mind typing in the data by hand.",
-    image: screenshotExpenses,
+      'Instantly flag missing VAT numbers and incorrect rates to prevent costly HMRC mistakes[cite: 13, 18].',
+    image: screenshotWarnings,
   },
   {
-    title: 'VAT handling',
+    title: 'Plain-English Explainer',
     description:
-      "We only sell our software to companies who don't deal with VAT at all, so technically we do all the VAT stuff they need.",
-    image: screenshotVatReturns,
+      'Get scenario-based VAT guidance in simple language, not complex tax-code jargon[cite: 5, 12].',
+    image: screenshotExplainer,
   },
   {
-    title: 'Reporting',
+    title: 'Pre-Submission Checks',
     description:
-      'Easily export your data into an Excel spreadsheet where you can do whatever the hell you want with it.',
-    image: screenshotReporting,
+      'Identify anomalies and HMRC rejection points before your return is officially filed[cite: 15].',
+    image: screenshotAudit,
   },
 ]
 
@@ -46,41 +47,28 @@ export function PrimaryFeatures() {
 
   useEffect(() => {
     let lgMediaQuery = window.matchMedia('(min-width: 1024px)')
-
     function onMediaQueryChange({ matches }: { matches: boolean }) {
       setTabOrientation(matches ? 'vertical' : 'horizontal')
     }
-
     onMediaQueryChange(lgMediaQuery)
     lgMediaQuery.addEventListener('change', onMediaQueryChange)
-
-    return () => {
-      lgMediaQuery.removeEventListener('change', onMediaQueryChange)
-    }
+    return () => lgMediaQuery.removeEventListener('change', onMediaQueryChange)
   }, [])
 
   return (
     <section
       id="features"
-      aria-label="Features for running your books"
-      className="relative overflow-hidden bg-blue-600 pt-20 pb-28 sm:py-32"
+      aria-label="Features for VAT compliance"
+      className="relative overflow-hidden bg-[#2D4A2D] pt-20 pb-28 sm:py-32"
     >
-      <Image
-        className="absolute top-1/2 left-1/2 max-w-none translate-x-[-44%] translate-y-[-42%]"
-        src={backgroundImage}
-        alt=""
-        width={2245}
-        height={1636}
-        unoptimized
-      />
       <Container className="relative">
         <div className="max-w-2xl md:mx-auto md:text-center xl:max-w-none">
           <h2 className="font-display text-3xl tracking-tight text-white sm:text-4xl md:text-5xl">
-            Everything you need to run your books.
+            VAT intelligence that prevents mistakes.
           </h2>
-          <p className="mt-6 text-lg tracking-tight text-blue-100">
-            Well everything you need if you aren’t that picky about minor
-            details like tax compliance.
+          <p className="mt-6 text-lg tracking-tight text-[#D1EAD1]">
+            Docket is the intelligence layer that sits on top of your accounting
+            software to explain the rules[cite: 18, 24].
           </p>
         </div>
         <TabGroup
@@ -95,22 +83,22 @@ export function PrimaryFeatures() {
                     <div
                       key={feature.title}
                       className={clsx(
-                        'group relative rounded-full px-4 py-1 lg:rounded-l-xl lg:rounded-r-none lg:p-6',
+                        'group relative rounded-full px-4 py-1 transition-all lg:rounded-l-[2rem] lg:rounded-r-none lg:p-6',
                         selectedIndex === featureIndex
-                          ? 'bg-white lg:bg-white/10 lg:ring-1 lg:ring-white/10 lg:ring-inset'
-                          : 'hover:bg-white/10 lg:hover:bg-white/5',
+                          ? 'bg-white lg:bg-white/10 lg:ring-1 lg:ring-white/20'
+                          : 'hover:bg-white/5',
                       )}
                     >
                       <h3>
                         <Tab
                           className={clsx(
-                            'font-display text-lg data-selected:not-data-focus:outline-hidden',
+                            'font-display text-lg focus:outline-none',
                             selectedIndex === featureIndex
-                              ? 'text-blue-600 lg:text-white'
-                              : 'text-blue-100 hover:text-white lg:text-white',
+                              ? 'text-[#2D4A2D] lg:text-white'
+                              : 'text-[#D1EAD1] hover:text-white lg:text-white',
                           )}
                         >
-                          <span className="absolute inset-0 rounded-full lg:rounded-l-xl lg:rounded-r-none" />
+                          <span className="absolute inset-0 rounded-full lg:rounded-l-[2rem]" />
                           {feature.title}
                         </Tab>
                       </h3>
@@ -119,7 +107,7 @@ export function PrimaryFeatures() {
                           'mt-2 hidden text-sm lg:block',
                           selectedIndex === featureIndex
                             ? 'text-white'
-                            : 'text-blue-100 group-hover:text-white',
+                            : 'text-[#D1EAD1] group-hover:text-white',
                         )}
                       >
                         {feature.description}
@@ -131,13 +119,7 @@ export function PrimaryFeatures() {
               <TabPanels className="lg:col-span-7">
                 {features.map((feature) => (
                   <TabPanel key={feature.title} unmount={false}>
-                    <div className="relative sm:px-6 lg:hidden">
-                      <div className="absolute -inset-x-4 -top-26 -bottom-17 bg-white/10 ring-1 ring-white/10 ring-inset sm:inset-x-0 sm:rounded-t-xl" />
-                      <p className="relative mx-auto max-w-2xl text-base text-white sm:text-center">
-                        {feature.description}
-                      </p>
-                    </div>
-                    <div className="mt-10 w-180 overflow-hidden rounded-xl bg-slate-50 shadow-xl shadow-blue-900/20 sm:w-auto lg:mt-0 lg:w-271.25">
+                    <div className="mt-10 w-180 overflow-hidden rounded-[2.5rem] bg-white shadow-2xl shadow-green-900/20 sm:w-auto lg:mt-0 lg:w-271.25">
                       <Image
                         className="w-full"
                         src={feature.image}

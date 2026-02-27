@@ -3,23 +3,6 @@ import clsx from 'clsx'
 import { Button } from '@/components/Button'
 import { Container } from '@/components/Container'
 
-function SwirlyDoodle(props: React.ComponentPropsWithoutRef<'svg'>) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 281 40"
-      preserveAspectRatio="none"
-      {...props}
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M240.172 22.994c-8.007 1.246-15.477 2.23-31.26 4.114-18.506 2.21-26.323 2.977-34.487 3.386-2.971.149-3.727.324-6.566 1.523-15.124 6.388-43.775 9.404-69.425 7.31-26.207-2.14-50.986-7.103-78-15.624C10.912 20.7.988 16.143.734 14.657c-.066-.381.043-.344 1.324.456 10.423 6.506 49.649 16.322 77.8 19.468 23.708 2.65 38.249 2.95 55.821 1.156 9.407-.962 24.451-3.773 25.101-4.692.074-.104.053-.155-.058-.135-1.062.195-13.863-.271-18.848-.687-16.681-1.389-28.722-4.345-38.142-9.364-15.294-8.15-7.298-19.232 14.802-20.514 16.095-.934 32.793 1.517 47.423 6.96 13.524 5.033 17.942 12.326 11.463 18.922l-.859.874.697-.006c2.681-.026 15.304-1.302 29.208-2.953 25.845-3.07 35.659-4.519 54.027-7.978 9.863-1.858 11.021-2.048 13.055-2.145a61.901 61.901 0 0 0 4.506-.417c1.891-.259 2.151-.267 1.543-.047-.402.145-2.33.913-4.285 1.707-4.635 1.882-5.202 2.07-8.736 2.903-3.414.805-19.773 3.797-26.404 4.829Zm40.321-9.93c.1-.066.231-.085.29-.041.059.043-.024.096-.183.119-.177.024-.219-.007-.107-.079ZM172.299 26.22c9.364-6.058 5.161-12.039-12.304-17.51-11.656-3.653-23.145-5.47-35.243-5.576-22.552-.198-33.577 7.462-21.321 14.814 12.012 7.205 32.994 10.557 61.531 9.831 4.563-.116 5.372-.288 7.337-1.559Z"
-      />
-    </svg>
-  )
-}
-
 function CheckIcon({
   className,
   ...props
@@ -27,24 +10,20 @@ function CheckIcon({
   return (
     <svg
       aria-hidden="true"
-      className={clsx(
-        'h-6 w-6 flex-none fill-current stroke-current',
-        className,
-      )}
+      className={clsx('h-5 w-5 flex-none', className)}
+      viewBox="0 0 24 24"
       {...props}
     >
       <path
-        d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
-        strokeWidth={0}
+        d="M9.2 12.9 7.3 11a1 1 0 0 0-1.4 1.4l2.6 2.6a1 1 0 0 0 1.5-.1l6.8-8.4A1 1 0 1 0 15.3 5l-6.1 7.9Z"
+        fill="currentColor"
       />
-      <circle
-        cx={12}
-        cy={12}
-        r={8.25}
+      <path
+        d="M12 22A10 10 0 1 1 12 2a10 10 0 0 1 0 20Z"
         fill="none"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        opacity="0.35"
       />
     </svg>
   )
@@ -53,128 +32,238 @@ function CheckIcon({
 function Plan({
   name,
   price,
+  cadence,
   description,
   href,
   features,
   featured = false,
+  badge,
+  footerNote,
+  ctaLabel = 'Start',
 }: {
   name: string
   price: string
+  cadence: string
   description: string
   href: string
   features: Array<string>
   featured?: boolean
+  badge?: string
+  footerNote?: string
+  ctaLabel?: string
 }) {
   return (
     <section
       className={clsx(
-        'flex flex-col rounded-3xl px-6 sm:px-8',
-        featured ? 'order-first bg-blue-600 py-8 lg:order-0' : 'lg:py-8',
+        'flex h-full flex-col rounded-3xl border px-6 py-8 sm:px-8',
+        featured
+          ? 'border-[#2B3A2E] bg-[#2B3A2E] text-[#FAF8F3] shadow-lg'
+          : 'border-[#E0DAD0] bg-white/70 text-[#2B3A2E] shadow-sm',
       )}
     >
-      <h3 className="mt-5 font-display text-lg text-white">{name}</h3>
-      <p
-        className={clsx(
-          'mt-2 text-base',
-          featured ? 'text-white' : 'text-slate-400',
-        )}
-      >
-        {description}
-      </p>
-      <p className="order-first font-display text-5xl font-light tracking-tight text-white">
-        {price}
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3
+            className={clsx(
+              'font-display text-lg',
+              featured ? 'text-[#FAF8F3]' : 'text-[#2B3A2E]',
+            )}
+          >
+            {name}
+          </h3>
+          <p
+            className={clsx(
+              'mt-2 text-sm leading-relaxed',
+              featured ? 'text-[#FAF8F3]/80' : 'text-[#7A8A7E]',
+            )}
+          >
+            {description}
+          </p>
+        </div>
+
+        {badge ? (
+          <span
+            className={clsx(
+              'shrink-0 rounded-full px-3 py-1 text-xs font-semibold',
+              featured
+                ? 'bg-[#C8956B] text-[#2B3A2E]'
+                : 'bg-[#C4DCBE] text-[#2B3A2E]',
+            )}
+          >
+            {badge}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-6 flex items-baseline gap-2">
+        <p className="font-display text-4xl">{price}</p>
+        <p
+          className={clsx(
+            'text-sm',
+            featured ? 'text-[#FAF8F3]/80' : 'text-[#7A8A7E]',
+          )}
+        >
+          {cadence}
+        </p>
+      </div>
+
       <ul
         role="list"
         className={clsx(
-          'order-last mt-10 flex flex-col gap-y-3 text-sm',
-          featured ? 'text-white' : 'text-slate-200',
+          'mt-8 flex flex-col gap-y-3 text-sm',
+          featured ? 'text-[#FAF8F3]' : 'text-[#2B3A2E]',
         )}
       >
         {features.map((feature) => (
-          <li key={feature} className="flex">
-            <CheckIcon className={featured ? 'text-white' : 'text-slate-400'} />
-            <span className="ml-4">{feature}</span>
+          <li key={feature} className="flex items-start gap-3">
+            <CheckIcon
+              className={featured ? 'text-[#6AAF7B]' : 'text-[#3E6B52]'}
+            />
+            <span
+              className={clsx(
+                featured ? 'text-[#FAF8F3]/90' : 'text-[#2B3A2E]',
+              )}
+            >
+              {feature}
+            </span>
           </li>
         ))}
       </ul>
-      <Button
-        href={href}
-        variant={featured ? 'solid' : 'outline'}
-        color="white"
-        className="mt-8"
-        aria-label={`Get started with the ${name} plan for ${price}`}
-      >
-        Get started
-      </Button>
+
+      <div className="mt-8">
+        <Button
+          href={href}
+          className={clsx(
+            'w-full rounded-xl px-6 py-3',
+            featured
+              ? 'bg-[#3E6B52] text-white hover:bg-[#2F5A44]'
+              : 'bg-[#3E6B52] text-white hover:bg-[#2F5A44]',
+          )}
+          aria-label={`Get started with the ${name} plan`}
+        >
+          {ctaLabel}
+        </Button>
+
+        {footerNote ? (
+          <p
+            className={clsx(
+              'mt-3 text-center text-xs',
+              featured ? 'text-[#FAF8F3]/70' : 'text-[#7A8A7E]',
+            )}
+          >
+            {footerNote}
+          </p>
+        ) : null}
+      </div>
     </section>
   )
 }
 
+/**
+ * Pricing + scan limits based on:
+ * - Cost per scan ≈ £0.03
+ * - Target profit margin = 70%  => costs <= 30% of price
+ * - Therefore max scans/month ≈ (0.30 * price) / 0.03 = 10 * price (£)
+ *
+ * We round to clean marketing numbers.
+ */
 export function Pricing() {
   return (
     <section
       id="pricing"
       aria-label="Pricing"
-      className="bg-slate-900 py-20 sm:py-32"
+      className="bg-[#FAF8F3] py-20 sm:py-28"
     >
       <Container>
-        <div className="md:text-center">
-          <h2 className="font-display text-3xl tracking-tight text-white sm:text-4xl">
-            <span className="relative whitespace-nowrap">
-              <SwirlyDoodle className="absolute top-1/2 left-0 h-[1em] w-full fill-blue-400" />
-              <span className="relative">Simple pricing,</span>
-            </span>{' '}
-            for everyone.
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="font-display text-3xl tracking-tight text-[#2B3A2E] sm:text-4xl">
+            Pricing that stays simple.
           </h2>
-          <p className="mt-4 text-lg text-slate-400">
-            It doesn’t matter what size your business is, our software won’t
-            work well for you.
+          <p className="mt-4 text-lg leading-relaxed text-[#7A8A7E]">
+            Start on Free. Upgrade when you’re scanning regularly. Every plan
+            includes VAT checks and clear notes.
           </p>
         </div>
-        <div className="-mx-4 mt-16 grid max-w-2xl grid-cols-1 gap-y-10 sm:mx-auto lg:-mx-8 lg:max-w-none lg:grid-cols-3 xl:mx-0 xl:gap-x-8">
+
+        <div className="mx-auto mt-14 grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-8">
+          <Plan
+            name="Free"
+            price="£0"
+            cadence="/ month"
+            description="Try Docket and see if it fits your workflow."
+            href="/register"
+            ctaLabel="Create free account"
+            footerNote="No card required"
+            features={[
+              '10 receipt scans / month',
+              'Vendor, date, totals extracted',
+              'Basic VAT visibility (when shown on receipt)',
+              'Monthly list of expenses',
+            ]}
+          />
+
           <Plan
             name="Starter"
-            price="$9"
-            description="Good for anyone who is self-employed and just getting started."
+            price="£15"
+            cadence="/ month"
+            description="For sole traders scanning a little each week."
             href="/register"
+            ctaLabel="Choose Starter"
+            footerNote="Cancel anytime"
             features={[
-              'Send 10 quotes and invoices',
-              'Connect up to 2 bank accounts',
-              'Track up to 15 expenses per month',
-              'Manual payroll support',
-              'Export up to 3 reports',
+              '150 receipt scans / month',
+              'Items + VAT extracted where possible',
+              'Reclaimable VAT highlights + notes',
+              'Export for your accountant',
             ]}
           />
+
           <Plan
             featured
-            name="Small business"
-            price="$15"
-            description="Perfect for small / medium sized businesses."
+            name="Core"
+            price="£29"
+            cadence="/ month"
+            description="Best value for monthly bookkeeping and VAT returns."
+            badge="Most popular"
             href="/register"
+            ctaLabel="Choose Core"
+            footerNote="Cancel anytime"
             features={[
-              'Send 25 quotes and invoices',
-              'Connect up to 5 bank accounts',
-              'Track up to 50 expenses per month',
-              'Automated payroll support',
-              'Export up to 12 reports',
-              'Bulk reconcile transactions',
-              'Track in multiple currencies',
+              '290 receipt scans / month',
+              'HMRC mistake warnings (card slips, missing VAT numbers)',
+              'Clear reclaim guidance (conservative, no guessing)',
+              'MTD-friendly export formats',
+              'Priority processing',
             ]}
           />
+
           <Plan
-            name="Enterprise"
-            price="$39"
-            description="For even the biggest enterprise companies."
+            name="Pro"
+            price="£59"
+            cadence="/ month"
+            description="For higher volume, small teams, and accountant workflows."
+            badge="Copper tier"
             href="/register"
+            ctaLabel="Choose Pro"
+            footerNote="Cancel anytime"
             features={[
-              'Send unlimited quotes and invoices',
-              'Connect up to 15 bank accounts',
-              'Track up to 200 expenses per month',
-              'Automated payroll support',
-              'Export up to 25 reports, including TPS',
+              '590 receipt scans / month',
+              'Multi-user access',
+              'Advanced exports + audit-ready summaries',
+              'Shared monthly reporting',
+              'Priority support',
             ]}
           />
+        </div>
+
+        <div className="mx-auto mt-12 max-w-3xl rounded-3xl border border-[#E0DAD0] bg-white/70 p-6 text-center shadow-sm backdrop-blur sm:p-8">
+          <p className="text-sm text-[#2B3A2E]">
+            Tip:{' '}
+            <span className="text-[#7A8A7E]">
+              If you’re close to your scan limit, we’ll warn you before you hit
+              it. Upgrading should feel calm — not urgent.
+            </span>
+          </p>
         </div>
       </Container>
     </section>
