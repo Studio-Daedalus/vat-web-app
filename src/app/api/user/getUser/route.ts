@@ -1,33 +1,15 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { GetUser } from '@/lib/server/user/getUser'
 
 export async function GET() {
-  try {
-    // If user is already logged in, take them straight to the dashboard
-    const cookieStore = await cookies()
-    const token = cookieStore.get('id-token')
+  const result = await GetUser()
 
-    const res = await fetch(
-      'https://0363asb5xk.execute-api.eu-west-2.amazonaws.com/dev/user',
-      {
-        headers: {
-          Authorization: token ? `Bearer ${token.value}` : '',
-        },
-        cache: 'no-store', // ensures fresh data from backend
-      },
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.message },
+      { status: result.status },
     )
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: 'Failed to fetch user' },
-        { status: res.status },
-      )
-    }
-
-    const data = await res.json()
-
-    return NextResponse.json(data)
-  } catch (err) {
-    return NextResponse.json({ error: 'Internal proxy error' }, { status: 500 })
   }
+
+  return NextResponse.json(result.user, { status: 200 })
 }

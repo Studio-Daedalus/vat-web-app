@@ -1,47 +1,23 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { fetchApiWithAutoRefresh } from '@/lib/fetchWithAuth'
+import { createUploadUrl } from '@/lib/server/receipts/createUploadUrl'
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies()
-    const token = cookieStore.get('id-token')
-
     const body = await req.json().catch(() => null)
 
-    if (!body?.filename || typeof body.filename !== 'string') {
+    const result = await createUploadUrl({
+      filename: body?.filename,
+      contentType: body?.contentType,
+    })
+
+    if (!result.ok) {
       return NextResponse.json(
-        { error: 'filename is required' },
-        { status: 400 },
+        { error: result.message },
+        { status: result.status },
       )
     }
 
-    const res = await fetchApiWithAutoRefresh(
-      'https://0363asb5xk.execute-api.eu-west-2.amazonaws.com/dev/receipts/uploadURL',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: token ? `Bearer ${token.value}` : '',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filename: body.filename,
-          contentType: body.contentType, // optional
-        }),
-        cache: 'no-store',
-      },
-    )
-
-    const data = await res.json().catch(() => null)
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: data?.error ?? 'Failed to create upload URL' },
-        { status: res.status },
-      )
-    }
-
-    return NextResponse.json(data)
+    return NextResponse.json(result.data, { status: 200 })
   } catch {
     return NextResponse.json({ error: 'Internal proxy error' }, { status: 500 })
   }

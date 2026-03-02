@@ -1,4 +1,5 @@
 import React from 'react'
+import { Container } from '@/components/Container'
 
 // Color Palette based on Greenhouse Brand Guide: Organic, Grounded, and Calm
 export function HeroSection() {
@@ -7,7 +8,8 @@ export function HeroSection() {
       {/* Decorative Background "Building Blocks" - Rounded & Organic */}
       <div className="absolute top-0 right-0 h-96 w-96 translate-x-1/4 -translate-y-1/2 rounded-full bg-[#F9FBF9] opacity-50 blur-3xl" />
 
-      <div className="relative z-10 container mx-auto px-6">
+      <Container className="relative">
+        <div className="relative z-10 container mx-auto">
         <div className="flex flex-col items-center gap-16 lg:flex-row">
           {/* Left Content: The Problem & Value Prop */}
           <div className="space-y-8 lg:w-1/2">
@@ -86,6 +88,7 @@ export function HeroSection() {
           </div>
         </div>
       </div>
+      </Container>
     </section>
   )
 }

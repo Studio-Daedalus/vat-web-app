@@ -55,7 +55,7 @@ function Plan({
   return (
     <section
       className={clsx(
-        'flex h-full flex-col rounded-3xl border px-6 py-8 sm:px-8',
+        'flex h-full flex-col rounded-3xl border py-8 sm:px-8',
         featured
           ? 'border-[#2B3A2E] bg-[#2B3A2E] text-[#FAF8F3] shadow-lg'
           : 'border-[#E0DAD0] bg-white/70 text-[#2B3A2E] shadow-sm',
@@ -185,7 +185,7 @@ export function Pricing() {
           </p>
         </div>
 
-        <div className="mx-auto mt-14 grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-8">
+        <div className="mt-14 grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-8">
           <Plan
             name="Free"
             price="£0"

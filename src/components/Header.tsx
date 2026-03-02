@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import Link from 'next/link'
 import {
   Popover,
@@ -48,53 +49,107 @@ function MobileNavLink({
   )
 }
 
+/**
+ * Header behavior:
+ * - fixed at top
+ * - scroll down => hide (translateY -100%)
+ * - scroll up => show
+ */
 export function Header() {
+  const HEADER_HEIGHT_PX = 80 // approx: py-4 + content. Adjust if needed.
+  const THRESHOLD = 10 // prevents jitter
+
+  const [hidden, setHidden] = React.useState(false)
+
+  const lastYRef = React.useRef(0)
+  const tickingRef = React.useRef(false)
+
+  React.useEffect(() => {
+    lastYRef.current = window.scrollY || 0
+
+    const onScroll = () => {
+      const currentY = window.scrollY || 0
+      const delta = currentY - lastYRef.current
+
+      if (tickingRef.current) return
+      tickingRef.current = true
+
+      window.requestAnimationFrame(() => {
+        // Always show when near top
+        if (currentY < 8) {
+          setHidden(false)
+        } else if (Math.abs(delta) >= THRESHOLD) {
+          // scrolling down => hide, scrolling up => show
+          setHidden(delta > 0)
+        }
+
+        lastYRef.current = currentY
+        tickingRef.current = false
+      })
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[#E0DAD0] bg-[#FAF8F3]/80 backdrop-blur">
-      <Container>
-        <nav className="flex items-center justify-between py-4">
-          <div className="flex items-center gap-10">
-            <Link href="/" aria-label="Home">
-              <Logo />
-            </Link>
+    <>
+      {/* Fixed, sliding header */}
+      <header
+        className={clsx(
+          'fixed inset-x-0 top-0 z-50 border-b border-[#E0DAD0] bg-[#FAF8F3]/80 backdrop-blur',
+          'transform-gpu transition-transform duration-200 ease-out',
+          hidden ? '-translate-y-full' : 'translate-y-0',
+        )}
+      >
+        <Container>
+          <nav className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-10">
+              <Link href="/" aria-label="Home">
+                <Logo />
+              </Link>
 
-            <div className="hidden items-center gap-1 md:flex">
-              <NavLink href="#features">Features</NavLink>
-              <NavLink href="#how-it-works">How it works</NavLink>
-              <NavLink href="#pricing">Pricing</NavLink>
-              <NavLink href="#faq">FAQ</NavLink>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-[#2B3A2E] hover:bg-white/70 md:inline-flex"
-            >
-              Sign in
-            </Link>
-
-            <Button
-              href="/register"
-              className={clsx(
-                'rounded-xl bg-[#3E6B52] px-5 py-2.5 text-sm font-semibold text-white',
-                'shadow-sm hover:bg-[#2F5A44]',
-              )}
-            >
-              Create free account
-            </Button>
-
-            <div className="hidden text-xs font-medium text-[#7A8A7E] md:block">
-              No card required
+              <div className="hidden items-center gap-1 lg:flex">
+                <NavLink href="#features">Features</NavLink>
+                <NavLink href="#how-it-works">How it works</NavLink>
+                <NavLink href="#pricing">Pricing</NavLink>
+                <NavLink href="#faq">FAQ</NavLink>
+              </div>
             </div>
 
-            <div className="md:hidden">
-              <MobileNavigation />
+            <div className="flex items-center gap-3">
+              <Link
+                href="/login"
+                className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-[#2B3A2E] hover:bg-white/70 lg:inline-flex"
+              >
+                Sign in
+              </Link>
+
+              <Button
+                href="/register"
+                className={clsx(
+                  'rounded-xl bg-[#3E6B52] px-5 py-2.5 text-sm font-semibold text-white',
+                  'shadow-sm hover:bg-[#2F5A44]',
+                )}
+              >
+                Create free account
+              </Button>
+
+              <div className="hidden text-xs font-medium text-[#7A8A7E] lg:block">
+                No card required
+              </div>
+
+              <div className="lg:hidden">
+                <MobileNavigation />
+              </div>
             </div>
-          </div>
-        </nav>
-      </Container>
-    </header>
+          </nav>
+        </Container>
+      </header>
+
+      {/* Spacer so content doesn't sit under the fixed header */}
+      <div style={{ height: HEADER_HEIGHT_PX }} />
+    </>
   )
 }
 

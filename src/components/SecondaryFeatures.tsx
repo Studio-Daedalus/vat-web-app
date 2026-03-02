@@ -186,7 +186,7 @@ function FeaturesDesktop() {
 export function SecondaryFeatures() {
   return (
     <section
-      id="secondary-features"
+      id="how-it-works"
       aria-label="Features for UK small businesses"
       className="bg-[#F9FBF9] pt-20 pb-14 sm:pt-32 sm:pb-20 lg:pb-32"
     >

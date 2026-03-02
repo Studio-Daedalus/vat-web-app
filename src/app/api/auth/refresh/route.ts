@@ -12,8 +12,8 @@ const client = new CognitoIdentityProviderClient({
 
 export async function POST() {
   const cookieStore = await cookies()
-
   const refreshToken = cookieStore.get('refresh-token')?.value
+
   if (!refreshToken) {
     return NextResponse.json({ error: 'No refresh token' }, { status: 401 })
   }
@@ -21,9 +21,7 @@ export async function POST() {
   const cmd = new InitiateAuthCommand({
     ClientId: process.env.COGNITO_CLIENT_ID!,
     AuthFlow: 'REFRESH_TOKEN_AUTH',
-    AuthParameters: {
-      REFRESH_TOKEN: refreshToken,
-    },
+    AuthParameters: { REFRESH_TOKEN: refreshToken },
   })
 
   try {
@@ -31,7 +29,7 @@ export async function POST() {
 
     const accessToken = result.AuthenticationResult?.AccessToken
     const idToken = result.AuthenticationResult?.IdToken
-    const expiresIn = result.AuthenticationResult?.ExpiresIn ?? 3600 // seconds
+    const expiresIn = result.AuthenticationResult?.ExpiresIn ?? 3600
 
     if (!accessToken) {
       return NextResponse.json(
@@ -40,7 +38,12 @@ export async function POST() {
       )
     }
 
-    const res = NextResponse.json({ ok: true })
+    const res = NextResponse.json({
+      ok: true,
+      accessToken,
+      idToken: idToken ?? null,
+      expiresIn,
+    })
 
     const opts = {
       httpOnly: true,
@@ -50,12 +53,16 @@ export async function POST() {
       maxAge: expiresIn,
     }
 
+    // IMPORTANT: clear cookies on THIS response
+    clearAuthCookies(res)
+
     res.cookies.set('access-token', accessToken, opts)
     if (idToken) res.cookies.set('id-token', idToken, opts)
 
     return res
   } catch {
-    await clearAuthCookies()
-    return NextResponse.json({ error: 'Refresh failed' }, { status: 401 })
+    const res = NextResponse.json({ error: 'Refresh failed' }, { status: 401 })
+    clearAuthCookies(res)
+    return res
   }
 }

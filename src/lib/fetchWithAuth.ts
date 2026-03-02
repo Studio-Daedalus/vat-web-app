@@ -1,12 +1,9 @@
 import { cookies, headers } from 'next/headers'
 
-async function baseUrlFromRequestHeaders() {
-  const h = await headers()
+function baseUrlFromRequestHeaders(h: Headers) {
   const host = h.get('x-forwarded-host') ?? h.get('host')
   const proto = h.get('x-forwarded-proto') ?? 'http'
-
   if (!host) throw new Error('Missing host headers')
-
   return `${proto}://${host}`
 }
 
@@ -14,32 +11,42 @@ export async function fetchApiWithAutoRefresh(
   url: string,
   init: RequestInit,
 ): Promise<Response> {
-  const doFetch = async () => {
-    const cookieStore = await cookies()
+  const h = await headers()
+  const base = baseUrlFromRequestHeaders(h)
+  const cookieHeader = h.get('cookie') ?? ''
 
-    const access = cookieStore.get('id-token')?.value
+  const doFetch = async (accessToken?: string) => {
     return fetch(url, {
       ...init,
       headers: {
         ...(init.headers ?? {}),
-        Authorization: access ? `Bearer ${access}` : '',
+        Authorization: accessToken ? `Bearer ${accessToken}` : '',
       },
       cache: 'no-store',
     })
   }
 
-  let res = await doFetch()
+  // ✅ use access-token, not id-token
+  const cookieStore = await cookies()
+  let accessToken = cookieStore.get('access-token')?.value
 
-  // If the access token expired, refresh and retry once
+  let res = await doFetch(accessToken)
+
   if (res.status === 401) {
-    const base = await baseUrlFromRequestHeaders()
     const refreshed = await fetch(`${base}/api/auth/refresh`, {
       method: 'POST',
+      headers: { cookie: cookieHeader }, // ✅ refresh endpoint can read refresh-token
       cache: 'no-store',
     })
 
     if (refreshed.ok) {
-      res = await doFetch()
+      const refreshedJson = await refreshed.json().catch(() => null)
+      const newAccess = refreshedJson?.accessToken as string | undefined
+
+      if (newAccess) {
+        accessToken = newAccess
+        res = await doFetch(accessToken) // ✅ retry using new token directly
+      }
     }
   }
 
