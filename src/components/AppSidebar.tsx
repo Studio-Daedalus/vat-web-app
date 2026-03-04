@@ -11,26 +11,26 @@ import warningIcon from '@/images/icons/warning.svg'
 import settingsIcon from '@/images/icons/settings.svg'
 import cameraIcon from '@/images/icons/camera.svg'
 
+import { useReceiptUploadModal } from '@/components/ReceiptUploadModalContext'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type NavItem = {
   label: string
   href: string
   icon: React.ReactNode
 }
 
-type AppSidebarLayoutProps = {
+export type AppSidebarLayoutProps = {
   children: React.ReactNode
-
-  // Company (left side of desktop top bar)
   companyName: string
   companyAvatarSrc?: string
-
-  // User (right side of desktop top bar)
   userName: string
   userAvatarSrc?: string
-
-  // Plan (shown under user name)
   planName: string
 }
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const COLORS = {
   parchment: '#FAF8F3',
@@ -39,7 +39,13 @@ const COLORS = {
   lichen: '#C4DCBE',
   bark: '#E0DAD0',
   stone: '#7A8A7E',
-}
+} as const
+
+const DESKTOP_OPEN_W = 280
+const DESKTOP_COLLAPSED_W = 96
+const TOPBAR_H = 72
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function cx(...classes: Array<string | false | undefined | null>) {
   return classes.filter(Boolean).join(' ')
@@ -48,24 +54,42 @@ function cx(...classes: Array<string | false | undefined | null>) {
 function initialFrom(label: string) {
   const cleaned = (label || '').trim()
   if (!cleaned) return '?'
-  const match = cleaned.match(/[A-Za-z0-9]/)
-  return (match?.[0] || '?').toUpperCase()
+  return (cleaned.match(/[A-Za-z0-9]/)?.[0] ?? '?').toUpperCase()
 }
 
-function Tooltip({ label }: { label: string }) {
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+function NavIcon({ src, alt = '' }: { src: string; alt?: string }) {
   return (
-    <span className="pointer-events-none absolute top-1/2 left-full z-50 ml-3 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
-      <span
-        className="rounded-lg border px-3 py-2 text-xs font-semibold whitespace-nowrap shadow-lg"
-        style={{
-          borderColor: COLORS.bark,
-          background: '#fff',
-          color: COLORS.forest,
-        }}
-      >
-        {label}
-      </span>
-    </span>
+    <Image
+      src={src}
+      alt={alt}
+      width={20}
+      height={20}
+      className="h-5 w-5"
+      unoptimized
+      aria-hidden="true"
+    />
+  )
+}
+
+function SignOutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <path
+        d="M10 7V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15 12H3m0 0 3-3m-3 3 3 3"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }
 
@@ -93,91 +117,7 @@ function CrownIcon() {
   )
 }
 
-/* Icons */
-function DashboardIcon() {
-  return (
-    <Image
-      src={dashboardIcon}
-      alt=""
-      width={20}
-      height={20}
-      className="h-5 w-5"
-      unoptimized
-      aria-hidden="true"
-    />
-  )
-}
-function ReceiptIcon() {
-  return (
-    <Image
-      src={receiptIcon}
-      alt=""
-      width={20}
-      height={20}
-      className="h-5 w-5"
-      unoptimized
-      aria-hidden="true"
-    />
-  )
-}
-function AlertIcon() {
-  return (
-    <Image
-      src={warningIcon}
-      alt=""
-      width={20}
-      height={20}
-      className="h-5 w-5"
-      unoptimized
-      aria-hidden="true"
-    />
-  )
-}
-function SettingsIcon() {
-  return (
-    <Image
-      src={settingsIcon}
-      alt=""
-      width={20}
-      height={20}
-      className="h-5 w-5"
-      unoptimized
-      aria-hidden="true"
-    />
-  )
-}
-function PhotoIcon() {
-  return (
-    <Image
-      src={cameraIcon}
-      alt=""
-      width={20}
-      height={20}
-      className="h-5 w-5"
-      unoptimized
-      aria-hidden="true"
-    />
-  )
-}
-function SignOutIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-      <path
-        d="M10 7V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-1"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M15 12H3m0 0 3-3m-3 3 3 3"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
+// ─── Avatar ───────────────────────────────────────────────────────────────────
 
 function Avatar({
   name,
@@ -188,17 +128,13 @@ function Avatar({
   src?: string
   size?: number
 }) {
-  const dim = `h-[${size}px] w-[${size}px]` // tailwind can't parse dynamic; we'll use inline style
+  const style = { width: size, height: size, borderColor: COLORS.bark }
+
   if (src) {
     return (
       <div
         className="overflow-hidden rounded-full border"
-        style={{
-          width: size,
-          height: size,
-          borderColor: COLORS.bark,
-          background: '#fff',
-        }}
+        style={{ ...style, background: '#fff' }}
         title={name}
         aria-label={name}
       >
@@ -215,13 +151,7 @@ function Avatar({
   return (
     <div
       className="flex items-center justify-center rounded-full border text-sm font-semibold"
-      style={{
-        width: size,
-        height: size,
-        borderColor: COLORS.bark,
-        background: '#fff',
-        color: COLORS.forest,
-      }}
+      style={{ ...style, background: '#fff', color: COLORS.forest }}
       title={name}
       aria-label={name}
     >
@@ -229,6 +159,27 @@ function Avatar({
     </div>
   )
 }
+
+// ─── Tooltip (collapsed sidebar) ──────────────────────────────────────────────
+
+function Tooltip({ label }: { label: string }) {
+  return (
+    <span className="pointer-events-none absolute top-1/2 left-full z-50 ml-3 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
+      <span
+        className="rounded-lg border px-3 py-2 text-xs font-semibold whitespace-nowrap shadow-lg"
+        style={{
+          borderColor: COLORS.bark,
+          background: '#fff',
+          color: COLORS.forest,
+        }}
+      >
+        {label}
+      </span>
+    </span>
+  )
+}
+
+// ─── Main layout ──────────────────────────────────────────────────────────────
 
 export function AppSidebarLayout({
   children,
@@ -239,36 +190,56 @@ export function AppSidebarLayout({
   planName,
 }: AppSidebarLayoutProps) {
   const pathname = usePathname()
+  const { openModal } = useReceiptUploadModal()
+
   const [collapsed, setCollapsed] = React.useState(false)
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
-  const nav: NavItem[] = [
-    { label: 'Dashboard', href: '/dashboard', icon: <DashboardIcon /> },
-    { label: 'Receipts', href: '/dashboard/receipts', icon: <ReceiptIcon /> },
-    { label: 'VAT checks', href: '/vat-checks', icon: <AlertIcon /> },
-    { label: 'Settings', href: '/settings', icon: <SettingsIcon /> },
-  ]
+  const desktopW = collapsed ? DESKTOP_COLLAPSED_W : DESKTOP_OPEN_W
 
-  const DESKTOP_OPEN_W = 280
-  const DESKTOP_COLLAPSED_W = 96
-  const TOPBAR_H = 72
-  const desktopSidebarWidthPx = collapsed ? DESKTOP_COLLAPSED_W : DESKTOP_OPEN_W
+  const nav: NavItem[] = [
+    {
+      label: 'Dashboard',
+      href: '/dashboard',
+      icon: <NavIcon src={dashboardIcon} />,
+    },
+    {
+      label: 'Receipts',
+      href: '/dashboard/receipts',
+      icon: <NavIcon src={receiptIcon} />,
+    },
+    {
+      label: 'VAT checks',
+      href: '/dashboard/vat-checks',
+      icon: <NavIcon src={warningIcon} />,
+    },
+    {
+      label: 'Settings',
+      href: '/dashboard/settings',
+      icon: <NavIcon src={settingsIcon} />,
+    },
+  ]
 
   // Close mobile drawer on Escape
   React.useEffect(() => {
     if (!mobileOpen) return
-    const onKeyDown = (e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMobileOpen(false)
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [mobileOpen])
 
-  function DesktopNavLink({ item }: { item: NavItem }) {
-    const active =
-      pathname === item.href ||
-      (item.href !== '/dashboard' && pathname?.startsWith(item.href))
+  // ── Nav link helpers ───────────────────────────────────────────────────────
 
+  function isActive(href: string) {
+    return (
+      pathname === href || (href !== '/dashboard' && pathname?.startsWith(href))
+    )
+  }
+
+  function DesktopNavLink({ item }: { item: NavItem }) {
+    const active = isActive(item.href)
     return (
       <Link
         href={item.href}
@@ -291,7 +262,6 @@ export function AppSidebarLayout({
         >
           {item.icon}
         </span>
-
         {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
         {collapsed && <Tooltip label={item.label} />}
       </Link>
@@ -299,10 +269,7 @@ export function AppSidebarLayout({
   }
 
   function MobileNavLink({ item }: { item: NavItem }) {
-    const active =
-      pathname === item.href ||
-      (item.href !== '/dashboard' && pathname?.startsWith(item.href))
-
+    const active = isActive(item.href)
     return (
       <Link
         href={item.href}
@@ -329,58 +296,88 @@ export function AppSidebarLayout({
     )
   }
 
-  const DesktopQuickAction = (
-    <div className={cx('group relative', collapsed && 'flex justify-center')}>
+  // ── Sidebar action buttons ─────────────────────────────────────────────────
+
+  const ScanButton = ({ fullWidth = false }: { fullWidth?: boolean }) => (
+    <div
+      className={cx(
+        'group relative',
+        !fullWidth && collapsed && 'flex justify-center',
+      )}
+    >
       <button
         type="button"
-        onClick={(e) => {console.log('scan receipt')}}
+        onClick={openModal}
         className={cx(
-          'w-full rounded-lg font-semibold transition-colors',
-          collapsed
-            ? 'flex h-10 w-10 items-center justify-center border'
-            : 'w-full px-3 py-2 text-sm',
+          'rounded-lg font-semibold transition-colors',
+          fullWidth
+            ? 'w-full px-3 py-2 text-sm'
+            : collapsed
+              ? 'flex h-10 w-10 items-center justify-center border'
+              : 'w-full px-3 py-2 text-sm',
         )}
         style={{
-          borderColor: COLORS.bark,
           background: COLORS.fern,
-          color: collapsed ? COLORS.forest : '#fff',
+          color: '#fff',
+          borderColor: COLORS.bark,
         }}
         aria-label="Scan a receipt"
       >
-        {collapsed ? <PhotoIcon /> : 'Scan a receipt'}
+        {!fullWidth && collapsed ? (
+          <Image
+            src={cameraIcon}
+            alt=""
+            width={20}
+            height={20}
+            className="h-5 w-5"
+            unoptimized
+            aria-hidden="true"
+          />
+        ) : (
+          'Scan a receipt'
+        )}
       </button>
-      {collapsed && <Tooltip label="Scan a receipt" />}
+      {!fullWidth && collapsed && <Tooltip label="Scan a receipt" />}
     </div>
   )
 
-  const DesktopSignOut = (
-    <div className={cx('group relative', collapsed && 'flex justify-center')}>
+  const SignOutButton = ({ fullWidth = false }: { fullWidth?: boolean }) => (
+    <div
+      className={cx(
+        'group relative',
+        !fullWidth && collapsed && 'flex justify-center',
+      )}
+    >
       <button
         type="button"
-        onClick={(e) => {
-          console.log('log out')
-        }}
+        onClick={() => console.log('sign out')}
         className={cx(
-          'w-full rounded-lg border px-3 py-2 text-sm',
-          collapsed &&
-            'flex h-10 w-10 items-center justify-center bg-white p-0',
+          'rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-[#F0EDE6]',
+          fullWidth
+            ? 'w-full'
+            : collapsed
+              ? 'flex h-10 w-10 items-center justify-center p-0'
+              : 'w-full',
         )}
         style={{ borderColor: COLORS.bark, color: COLORS.forest }}
         aria-label="Sign out"
       >
-        {collapsed ? <SignOutIcon /> : 'Sign out'}
+        {!fullWidth && collapsed ? <SignOutIcon /> : 'Sign out'}
       </button>
-      {collapsed && <Tooltip label="Sign out" />}
+      {!fullWidth && collapsed && <Tooltip label="Sign out" />}
     </div>
   )
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
-    <div className="min-h-screen" style={{ background: COLORS.parchment }}>
-      {/* MOBILE TOP BAR */}
+    <div className="min-h-screen" >
+      {/* ── MOBILE TOP BAR ─────────────────────────────────────────────────── */}
       <div
         className="sticky top-0 z-40 flex items-center justify-between border-b px-4 py-3 lg:hidden"
         style={{ background: COLORS.parchment, borderColor: COLORS.bark }}
       >
+        {/* Hamburger */}
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
@@ -404,53 +401,50 @@ export function AppSidebarLayout({
           Menu
         </button>
 
-        <div className="min-w-0">
-          <div
-            className="truncate text-sm font-semibold"
-            style={{ color: COLORS.forest }}
-          >
-            {companyName}
-          </div>
-        </div>
+        {/* Company name — always visible */}
+        <span
+          className="truncate text-sm font-semibold"
+          style={{ color: COLORS.forest }}
+        >
+          {companyName}
+        </span>
 
         <Avatar name={userName} src={userAvatarSrc} size={36} />
       </div>
 
-      {/* DESKTOP TOP BAR */}
+      {/* ── DESKTOP TOP BAR ────────────────────────────────────────────────── */}
+      {/*    Always shows: company name (left) · user name + plan + avatar (right) */}
       <div
         className="fixed top-0 right-0 z-30 hidden items-center justify-between border-b px-6 lg:flex"
         style={{
-          left: desktopSidebarWidthPx,
-          height: TOPBAR_H, // ✅ explicit height
+          left: desktopW,
+          height: TOPBAR_H,
           background: COLORS.parchment,
           borderColor: COLORS.bark,
         }}
       >
-        {/* LEFT: Company */}
+        {/* LEFT: App / company name */}
         <div className="flex min-w-0 items-center gap-3">
           <Avatar name={companyName} src={companyAvatarSrc} size={40} />
-          <div className="min-w-0">
-            <div
-              className="truncate text-sm font-semibold"
-              style={{ color: COLORS.forest }}
-            >
-              {companyName}
-            </div>
-          </div>
+          <span
+            className="truncate text-sm font-semibold"
+            style={{ color: COLORS.forest }}
+          >
+            {companyName}
+          </span>
         </div>
 
-        {/* RIGHT: User */}
-        <div className="flex items-center gap-4">
+        {/* RIGHT: User name · plan badge · avatar — always visible */}
+        <div className="flex flex-shrink-0 items-center gap-4">
           <div className="flex flex-col items-end leading-tight">
-            <div
+            <span
               className="text-sm font-semibold"
               style={{ color: COLORS.forest }}
             >
               {userName}
-            </div>
-
+            </span>
             <div
-              className="flex items-center justify-end gap-1 rounded-full px-2 py-0.5"
+              className="mt-0.5 flex items-center gap-1 rounded-full px-2 py-0.5"
               style={{ background: '#F5F1E6' }}
             >
               <CrownIcon />
@@ -462,28 +456,30 @@ export function AppSidebarLayout({
               </span>
             </div>
           </div>
-
           <Avatar name={userName} src={userAvatarSrc} size={36} />
         </div>
       </div>
 
-      {/* MOBILE DRAWER */}
+      {/* ── MOBILE DRAWER ──────────────────────────────────────────────────── */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-50 lg:hidden"
           aria-modal="true"
           role="dialog"
         >
+          {/* Backdrop */}
           <div
             className="absolute inset-0"
             style={{ background: 'rgba(43,58,46,0.35)' }}
             onClick={() => setMobileOpen(false)}
           />
 
+          {/* Panel */}
           <div
             className="absolute top-0 left-0 h-full w-[84%] max-w-[320px] border-r shadow-xl"
             style={{ background: COLORS.parchment, borderColor: COLORS.bark }}
           >
+            {/* Drawer header */}
             <div className="flex items-center justify-between px-4 py-4">
               <div className="flex min-w-0 items-center gap-3">
                 <Avatar name={companyName} src={companyAvatarSrc} size={40} />
@@ -502,7 +498,6 @@ export function AppSidebarLayout({
                   </div>
                 </div>
               </div>
-
               <button
                 type="button"
                 className="rounded-md border p-2"
@@ -526,6 +521,7 @@ export function AppSidebarLayout({
               </button>
             </div>
 
+            {/* Nav links */}
             <div className="px-3 pb-4">
               <nav className="space-y-1">
                 {nav.map((item) => (
@@ -534,45 +530,28 @@ export function AppSidebarLayout({
               </nav>
             </div>
 
+            {/* Drawer footer actions */}
             <div
               className="absolute right-0 bottom-0 left-0 space-y-3 border-t p-4"
               style={{ borderColor: COLORS.bark }}
             >
-              <button
-                type="button"
-                onClick={(e) => {
-                  console.log('scan receipt')
-                }}
-                className="w-full rounded-lg px-3 py-2 text-sm font-semibold"
-                style={{ background: COLORS.fern, color: '#fff' }}
-              >
-                Scan a receipt
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  console.log('sign out')
-                }}
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                style={{ borderColor: COLORS.bark, color: COLORS.forest }}
-              >
-                Sign out
-              </button>
+              <ScanButton fullWidth />
+              <SignOutButton fullWidth />
             </div>
           </div>
         </div>
       )}
 
-      {/* DESKTOP SIDEBAR */}
+      {/* ── DESKTOP SIDEBAR ────────────────────────────────────────────────── */}
       <aside
         className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:flex-col lg:border-r lg:shadow-sm"
         style={{
-          width: desktopSidebarWidthPx,
+          width: desktopW,
           background: COLORS.parchment,
           borderColor: COLORS.bark,
         }}
       >
+        {/* Collapse toggle */}
         <div
           className={cx(
             'flex items-center px-3 py-4',
@@ -585,7 +564,6 @@ export function AppSidebarLayout({
             className="rounded-md border p-2"
             style={{ borderColor: COLORS.bark, color: COLORS.forest }}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <svg
               viewBox="0 0 24 24"
@@ -614,6 +592,7 @@ export function AppSidebarLayout({
           </button>
         </div>
 
+        {/* Nav */}
         <div className={cx('px-3', collapsed && 'px-2')}>
           <nav className="space-y-1">
             {nav.map((item) => (
@@ -622,17 +601,18 @@ export function AppSidebarLayout({
           </nav>
         </div>
 
+        {/* Bottom actions */}
         <div className="mt-auto space-y-3 p-4">
-          {DesktopQuickAction}
-          {DesktopSignOut}
+          <ScanButton />
+          <SignOutButton />
         </div>
       </aside>
 
-      {/* CONTENT */}
+      {/* ── PAGE CONTENT ───────────────────────────────────────────────────── */}
       <main
-        className="px-4 py-6 lg:px-8 lg:pl-(--sidebar-w) lg:pt-(--topbar-h)"
+        className="px-4 py-6 lg:px-8 lg:pt-(--topbar-h) lg:pl-(--sidebar-w)"
         style={{
-          ['--sidebar-w' as any]: `${desktopSidebarWidthPx + 32}px`,
+          ['--sidebar-w' as any]: `${desktopW + 32}px`,
           ['--topbar-h' as any]: `${TOPBAR_H + 24}px`,
         }}
       >

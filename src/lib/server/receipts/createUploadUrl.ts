@@ -30,7 +30,7 @@ export async function createUploadUrl(
     const token = cookieStore.get('id-token')
 
     const res = await fetchApiWithAutoRefresh(
-      'https://0363asb5xk.execute-api.eu-west-2.amazonaws.com/dev/receipts/uploadURL',
+      `${process.env.API_BASE_URL}/receipts/uploadURL`,
       {
         method: 'POST',
         headers: {

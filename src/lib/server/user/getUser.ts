@@ -21,8 +21,9 @@ export async function GetUser(): Promise<GetUserResult> {
     const cookieStore = await cookies()
     const token = cookieStore.get('id-token')
 
+    console.log('url: ', `${process.env.API_BASE_URL}/user`)
     const res = await fetchApiWithAutoRefresh(
-      'https://0363asb5xk.execute-api.eu-west-2.amazonaws.com/dev/user',
+      `${process.env.API_BASE_URL}/user`,
       {
         headers: {
           Authorization: token ? `Bearer ${token.value}` : '',

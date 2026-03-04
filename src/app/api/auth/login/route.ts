@@ -5,7 +5,7 @@ import {
 } from '@aws-sdk/client-cognito-identity-provider'
 
 const client = new CognitoIdentityProviderClient({
-  region: process.env.AWS_REGION,
+  region: process.env.COGNITO_REGION,
 })
 
 export async function POST(req: Request) {

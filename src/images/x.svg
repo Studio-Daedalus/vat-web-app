@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+    <defs>
+        <!-- Clipping mask: receipt shape with torn bottom edge -->
+        <clipPath id="receipt-clip">
+            <path d="
+        M 28 10
+        Q 28 8 30 8
+        L 90 8
+        Q 92 8 92 10
+        L 92 95
+        Q 86 90 80 95
+        Q 74 100 68 95
+        Q 62 90 56 95
+        Q 50 100 44 95
+        Q 38 90 32 95
+        Q 29 97 28 95
+        Z
+      "/>
+        </clipPath>
+
+        <!-- Soft glow for the sprout -->
+        <radialGradient id="glow" cx="50%" cy="60%" r="50%">
+            <stop offset="0%"   stop-color="#6AAF7B" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#6AAF7B" stop-opacity="0"/>
+        </radialGradient>
+    </defs>
+
+    <!-- ── Receipt body ── -->
+    <path
+            d="
+      M 28 10
+      Q 28 8 30 8
+      L 90 8
+      Q 92 8 92 10
+      L 92 95
+      Q 86 90 80 95
+      Q 74 100 68 95
+      Q 62 90 56 95
+      Q 50 100 44 95
+      Q 38 90 32 95
+      Q 29 97 28 95
+      Z
+    "
+            fill="#2B3A2E"
+    />
+
+    <!-- ── Receipt line details (subtle, dark-on-dark) ── -->
+    <!-- Top rule -->
+    <line x1="36" y1="28" x2="84" y2="28" stroke="#3E6B52" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Three short lines — like receipt text rows -->
+    <line x1="36" y1="40" x2="72" y2="40" stroke="#3E6B52" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+    <line x1="36" y1="50" x2="66" y2="50" stroke="#3E6B52" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+    <line x1="36" y1="60" x2="76" y2="60" stroke="#3E6B52" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+    <!-- Bottom total rule + amount -->
+    <line x1="36" y1="73" x2="84" y2="73" stroke="#C4DCBE" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+    <line x1="60" y1="80" x2="84" y2="80" stroke="#C4DCBE" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+
+    <!-- ── Glow behind sprout ── -->
+    <ellipse cx="60" cy="66" rx="26" ry="22" fill="url(#glow)"/>
+
+    <!-- ── Growth curve (clipped to receipt shape) ── -->
+    <g clip-path="url(#receipt-clip)">
+        <!-- Upward organic curve — the "growth" line -->
+        <path
+                d="M 36 82 C 36 68, 46 58, 52 50 C 58 42, 56 32, 60 22"
+                stroke="#6AAF7B"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                fill="none"
+                opacity="0.55"
+        />
+        <!-- Main bold growth curve -->
+        <path
+                d="M 44 84 C 44 70, 54 60, 60 50 C 66 40, 64 30, 68 18"
+                stroke="#C4DCBE"
+                stroke-width="3"
+                stroke-linecap="round"
+                fill="none"
+                opacity="0.7"
+        />
+    </g>
+
+    <!-- ── Sprout / seedling emerging from the receipt ── -->
+    <!-- Stem -->
+    <line x1="60" y1="100" x2="60" y2="62" stroke="#6AAF7B" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Left leaf -->
+    <path
+            d="M 60 76 C 52 72, 44 64, 46 56 C 50 60, 56 68, 60 70"
+            fill="#3E6B52"
+            stroke="#6AAF7B"
+            stroke-width="1"
+    />
+
+    <!-- Right leaf -->
+    <path
+            d="M 60 68 C 68 64, 76 56, 74 48 C 70 52, 64 60, 60 62"
+            fill="#3E6B52"
+            stroke="#6AAF7B"
+            stroke-width="1"
+    />
+
+    <!-- Top bud -->
+    <path
+            d="M 60 62 C 55 56, 54 48, 60 44 C 66 48, 65 56, 60 62"
+            fill="#6AAF7B"
+    />
+    <circle cx="60" cy="43" r="4.5" fill="#C4DCBE"/>
+</svg>

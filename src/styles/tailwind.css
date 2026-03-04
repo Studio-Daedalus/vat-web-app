@@ -38,3 +38,9 @@
 
   --container-2xl: 40rem;
 }
+
+html,
+body {
+  background-color: #F5F2EB; /* One tone deeper than parchment — suits the sidebar layout */
+  min-height: 100%;
+}

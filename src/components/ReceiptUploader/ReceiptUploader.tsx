@@ -1,7 +1,11 @@
 'use client'
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { createUploadUrlClient, guessContentType, guessFileType } from '@/components/ReceiptUploader/utils'
+import React, { useEffect, useRef, useState } from 'react'
+import {
+  createUploadUrlClient,
+  guessContentType,
+  guessFileType,
+} from '@/components/ReceiptUploader/utils'
 
 export default function ReceiptUploader() {
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -13,20 +17,21 @@ export default function ReceiptUploader() {
   const [success, setSuccess] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
+  // Revoke object URL on unmount / change
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
   }, [previewUrl])
 
+  // ── File handling ──────────────────────────────────────────────────────────
+
   const handleFile = (f: File | null) => {
     setFile(f)
     if (previewUrl) URL.revokeObjectURL(previewUrl)
-    if (f && f.type.startsWith('image/')) {
-      setPreviewUrl(URL.createObjectURL(f))
-    } else {
-      setPreviewUrl(null)
-    }
+    setPreviewUrl(
+      f && f.type.startsWith('image/') ? URL.createObjectURL(f) : null,
+    )
   }
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,11 +54,14 @@ export default function ReceiptUploader() {
     if (inputRef.current) inputRef.current.value = ''
   }
 
+  // ── Upload ─────────────────────────────────────────────────────────────────
+
   const upload = async () => {
     if (!file) {
       setError('Please choose a file first.')
       return
     }
+
     setIsUploading(true)
     setError(null)
     setSuccess(null)
@@ -66,14 +74,9 @@ export default function ReceiptUploader() {
         filename,
         contentType,
       })
+      if (!createResult.ok) throw new Error(createResult.message)
 
-      if (!createResult.ok) {
-        throw new Error(createResult.message)
-      }
-
-      const { uploadUrl } = createResult.data
-
-      const putRes = await fetch(uploadUrl, {
+      const putRes = await fetch(createResult.data.uploadUrl, {
         method: 'PUT',
         headers: { 'Content-Type': contentType },
         body: file,
@@ -82,7 +85,7 @@ export default function ReceiptUploader() {
       if (!putRes.ok) {
         const text = await putRes.text().catch(() => '')
         throw new Error(
-          `Upload to S3 failed (${putRes.status}). ${text ? text.slice(0, 200) : ''}`,
+          `Upload failed (${putRes.status}).${text ? ' ' + text.slice(0, 200) : ''}`,
         )
       }
 
@@ -98,54 +101,10 @@ export default function ReceiptUploader() {
     }
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
-    <div
-      className="w-full max-w-xl rounded-2xl border p-7"
-      style={{
-        backgroundColor: '#FAF8F3',
-        borderColor: '#E0DAD0',
-        boxShadow:
-          '0 1px 3px rgba(43,58,46,0.06), 0 4px 16px rgba(43,58,46,0.04)',
-      }}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
-          style={{ backgroundColor: '#C4DCBE' }}
-        >
-          <svg
-            width="18"
-            height="18"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="#3E6B52"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
-        </div>
-        <p className="text-base font-bold" style={{ color: '#2B3A2E' }}>
-          Upload a receipt
-        </p>
-      </div>
-
-      <p
-        className="mt-2 pl-12 text-sm leading-relaxed"
-        style={{ color: '#7A8A7E' }}
-      >
-        Snap a photo or choose a file. We'll pull the VAT out for you.
-      </p>
-
-      {/* Divider */}
-      <div className="my-5 h-px" style={{ backgroundColor: '#E0DAD0' }} />
-
+    <div className="w-full">
       {/* Drop zone */}
       <label
         className={[
@@ -180,6 +139,7 @@ export default function ReceiptUploader() {
         />
 
         {file ? (
+          /* ── File selected ── */
           <>
             <div
               className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
@@ -236,6 +196,7 @@ export default function ReceiptUploader() {
             </button>
           </>
         ) : (
+          /* ── Empty state ── */
           <>
             <div
               className="mb-1 flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-150"
@@ -294,12 +255,10 @@ export default function ReceiptUploader() {
         style={{ backgroundColor: '#3E6B52' }}
         onMouseEnter={(e) => {
           if (!isUploading && file)
-            (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-              '#35604A'
+            e.currentTarget.style.backgroundColor = '#35604A'
         }}
         onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.backgroundColor =
-            '#3E6B52'
+          e.currentTarget.style.backgroundColor = '#3E6B52'
         }}
       >
         {isUploading ? (
@@ -384,7 +343,6 @@ export default function ReceiptUploader() {
         </div>
       )}
 
-      {/* Accepted formats hint */}
       <p className="mt-4 text-center text-xs" style={{ color: '#7A8A7E' }}>
         Accepts JPG · PNG · PDF
       </p>

@@ -7,7 +7,7 @@ import {
 import { clearAuthCookies } from '@/lib/auth/clearAuthCookies'
 
 const client = new CognitoIdentityProviderClient({
-  region: process.env.AWS_REGION!,
+  region: process.env.COGNITO_REGION!,
 })
 
 export async function POST() {
