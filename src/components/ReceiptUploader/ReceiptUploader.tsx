@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import {
   createUploadUrlClient,
   guessContentType,
-  guessFileType,
+  guessFileType
 } from '@/components/ReceiptUploader/utils'
+import { normaliseImageFile, isHeic } from '@/components/ReceiptUploader/converters/heicConverter'
 
 export default function ReceiptUploader() {
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -16,6 +17,7 @@ export default function ReceiptUploader() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isConverting, setIsConverting] = useState(false)
 
   // Revoke object URL on unmount / change
   useEffect(() => {
@@ -34,10 +36,30 @@ export default function ReceiptUploader() {
     )
   }
 
+  const prepareFile = async (f: File | null) => {
+    if (!f) return handleFile(null)
+    if (isHeic(f)) {
+      setIsConverting(true)
+      try {
+        handleFile(await normaliseImageFile(f))
+      } catch (e: any) {
+        setError(
+          e?.message ??
+            'Could not convert HEIC file. Please convert to JPEG first.',
+        )
+        handleFile(null)
+      } finally {
+        setIsConverting(false)
+      }
+    } else {
+      handleFile(f)
+    }
+  }
+
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null)
     setSuccess(null)
-    handleFile(e.target.files?.[0] ?? null)
+    prepareFile(e.target.files?.[0] ?? null)
   }
 
   const onDrop = (e: React.DragEvent<HTMLLabelElement>) => {
@@ -45,7 +67,7 @@ export default function ReceiptUploader() {
     setIsDragging(false)
     setError(null)
     setSuccess(null)
-    handleFile(e.dataTransfer.files?.[0] ?? null)
+    prepareFile(e.dataTransfer.files?.[0] ?? null)
   }
 
   const clearSelection = () => {
@@ -132,10 +154,10 @@ export default function ReceiptUploader() {
         <input
           ref={inputRef}
           type="file"
-          accept=".jpg,.jpeg,.png,.pdf"
+          accept=".jpg,.jpeg,.png,.pdf,.heic,.heif"
           className="hidden"
           onChange={onPickFile}
-          disabled={isUploading}
+          disabled={isUploading || isConverting}
         />
 
         {file ? (
@@ -227,7 +249,7 @@ export default function ReceiptUploader() {
               </span>
             </p>
             <p className="text-xs" style={{ color: '#7A8A7E' }}>
-              JPG, PNG or PDF · up to 10 MB
+              JPG, PNG, PDF or HEIC · up to 10 MB
             </p>
           </>
         )}
@@ -250,7 +272,7 @@ export default function ReceiptUploader() {
       {/* Upload button */}
       <button
         onClick={upload}
-        disabled={!file || isUploading}
+        disabled={!file || isUploading || isConverting}
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40"
         style={{ backgroundColor: '#3E6B52' }}
         onMouseEnter={(e) => {
@@ -261,7 +283,12 @@ export default function ReceiptUploader() {
           e.currentTarget.style.backgroundColor = '#3E6B52'
         }}
       >
-        {isUploading ? (
+        {isConverting ? (
+          <>
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            Converting…
+          </>
+        ) : isUploading ? (
           <>
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             Uploading…
@@ -344,7 +371,7 @@ export default function ReceiptUploader() {
       )}
 
       <p className="mt-4 text-center text-xs" style={{ color: '#7A8A7E' }}>
-        Accepts JPG · PNG · PDF
+        Accepts JPG · PNG · PDF · HEIC
       </p>
     </div>
   )

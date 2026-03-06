@@ -1,46 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
+import { C } from '@/components/Sidebar/icons'
+import type { Receipt, VatRate, ReceiptStatus } from '@/types'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type VatRate = 'standard' | 'reduced' | 'zero' | 'exempt'
-type ReceiptStatus = 'claimed' | 'pending' | 'flagged'
-
-export type Receipt = {
-  id: string
-  vendor: string
-  date: string           // ISO date string e.g. "2026-02-14"
-  totalAmount: number    // Gross amount in GBP
-  vatAmount: number      // VAT portion in GBP
-  vatRate: VatRate
-  reclaimable: boolean
-  status: ReceiptStatus
-  flagReason?: string    // Populated when status === 'flagged'
-}
-
-// ─── Demo data ────────────────────────────────────────────────────────────────
-
-const DEMO_RECEIPTS: Receipt[] = [
-  { id: '1',  vendor: 'Tesco Express',         date: '2026-02-14', totalAmount: 23.40,  vatAmount: 3.90,  vatRate: 'standard', reclaimable: true,  status: 'claimed' },
-  { id: '2',  vendor: 'Amazon Business',        date: '2026-02-11', totalAmount: 119.99, vatAmount: 20.00, vatRate: 'standard', reclaimable: true,  status: 'claimed' },
-  { id: '3',  vendor: 'BT Business',            date: '2026-02-08', totalAmount: 84.00,  vatAmount: 14.00, vatRate: 'standard', reclaimable: true,  status: 'pending' },
-  { id: '4',  vendor: 'Costa Coffee',           date: '2026-02-06', totalAmount: 12.50,  vatAmount: 2.08,  vatRate: 'standard', reclaimable: false, status: 'flagged', flagReason: 'Entertainment expense — reclaimability unclear' },
-  { id: '5',  vendor: 'Shell Petrol',           date: '2026-02-04', totalAmount: 95.00,  vatAmount: 15.83, vatRate: 'standard', reclaimable: true,  status: 'claimed' },
-  { id: '6',  vendor: 'Royal Mail',             date: '2026-01-31', totalAmount: 18.60,  vatAmount: 0.00,  vatRate: 'exempt',   reclaimable: false, status: 'claimed' },
-  { id: '7',  vendor: 'Screwfix',               date: '2026-01-28', totalAmount: 204.00, vatAmount: 34.00, vatRate: 'standard', reclaimable: true,  status: 'claimed' },
-  { id: '8',  vendor: 'Freelancer Invoice',     date: '2026-01-24', totalAmount: 600.00, vatAmount: 0.00,  vatRate: 'zero',     reclaimable: false, status: 'flagged', flagReason: 'No VAT number on invoice — verify with supplier' },
-  { id: '9',  vendor: 'WeWork Day Pass',        date: '2026-01-20', totalAmount: 45.00,  vatAmount: 7.50,  vatRate: 'standard', reclaimable: true,  status: 'claimed' },
-  { id: '10', vendor: 'British Gas Business',   date: '2026-01-15', totalAmount: 312.00, vatAmount: 15.60, vatRate: 'reduced',  reclaimable: true,  status: 'pending' },
-]
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) =>
   n.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })
 
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  })
+
+// ─── Style maps ───────────────────────────────────────────────────────────────
 
 const VAT_RATE_LABELS: Record<VatRate, string> = {
   standard: '20%',
@@ -49,18 +23,22 @@ const VAT_RATE_LABELS: Record<VatRate, string> = {
   exempt:   'Exempt',
 }
 
-const VAT_RATE_STYLES: Record<VatRate, { pill: string; dot: string }> = {
-  standard: { pill: 'bg-[rgba(62,107,82,0.1)] text-[#3E6B52]',   dot: 'bg-[#3E6B52]' },
-  reduced:  { pill: 'bg-[rgba(200,149,107,0.12)] text-[#A8703A]', dot: 'bg-[#C8956B]' },
-  zero:     { pill: 'bg-[rgba(122,138,126,0.12)] text-[#5A6E5E]', dot: 'bg-[#7A8A7E]' },
-  exempt:   { pill: 'bg-[rgba(122,138,126,0.12)] text-[#5A6E5E]', dot: 'bg-[#7A8A7E]' },
+type PillStyle = { bg: string; color: string; border: string }
+
+const VAT_RATE_PILL: Record<VatRate, PillStyle> = {
+  standard: { bg: `${C.fern}12`,   color: C.fern,    border: `${C.fern}30`   },
+  reduced:  { bg: `${C.copper}18`, color: '#A8703A', border: `${C.copper}40` },
+  zero:     { bg: `${C.stone}18`,  color: C.stone,   border: `${C.stone}40`  },
+  exempt:   { bg: `${C.stone}18`,  color: C.stone,   border: `${C.stone}40`  },
 }
 
-const STATUS_STYLES: Record<ReceiptStatus, { pill: string; label: string }> = {
-  claimed: { pill: 'bg-[rgba(61,160,106,0.1)] text-[#2D8055]',   label: 'Claimed' },
-  pending: { pill: 'bg-[rgba(212,135,74,0.12)] text-[#B86E2A]',  label: 'Pending' },
-  flagged: { pill: 'bg-[rgba(196,90,74,0.1)] text-[#C45A4A]',    label: 'Flagged' },
+const STATUS_PILL: Record<ReceiptStatus, PillStyle & { dot: string; label: string }> = {
+  claimed: { bg: `${C.success}18`, color: C.success, border: `${C.success}40`, dot: C.success, label: 'Claimed' },
+  pending: { bg: `${C.warning}18`, color: C.warning, border: `${C.warning}40`, dot: C.warning, label: 'Pending' },
+  flagged: { bg: `${C.error}15`,   color: C.error,   border: `${C.error}40`,   dot: C.error,   label: 'Flagged' },
 }
+
+// ─── Sort types ───────────────────────────────────────────────────────────────
 
 type SortKey = 'date' | 'vendor' | 'totalAmount' | 'vatAmount'
 type SortDir = 'asc' | 'desc'
@@ -69,90 +47,130 @@ type SortDir = 'asc' | 'desc'
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   return (
-    <span className="ml-1 inline-flex flex-col gap-[2px]">
-      <svg
-        width="8" height="8" viewBox="0 0 8 8" fill="none"
-        className={active && dir === 'asc' ? 'opacity-100' : 'opacity-25'}
-      >
-        <path d="M4 1L7 6H1L4 1Z" fill="#2B3A2E" />
+    <span style={{
+      marginLeft: 4, display: 'inline-flex', flexDirection: 'column',
+      gap: 2, verticalAlign: 'middle',
+    }}>
+      <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
+           style={{ opacity: active && dir === 'asc' ? 1 : 0.25 }}>
+        <path d="M4 1L7 6H1L4 1Z" fill={C.forest} />
       </svg>
-      <svg
-        width="8" height="8" viewBox="0 0 8 8" fill="none"
-        className={active && dir === 'desc' ? 'opacity-100' : 'opacity-25'}
-      >
-        <path d="M4 7L1 2H7L4 7Z" fill="#2B3A2E" />
+      <svg width="8" height="8" viewBox="0 0 8 8" fill="none"
+           style={{ opacity: active && dir === 'desc' ? 1 : 0.25 }}>
+        <path d="M4 7L1 2H7L4 7Z" fill={C.forest} />
       </svg>
     </span>
   )
 }
 
 function StatusPill({ status }: { status: ReceiptStatus }) {
-  const s = STATUS_STYLES[status]
+  const s = STATUS_PILL[status]
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.pill}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${
-        status === 'claimed' ? 'bg-[#3DA06A]' :
-          status === 'pending' ? 'bg-[#D4874A]' :
-            'bg-[#C45A4A]'
-      }`} />
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600,
+      fontFamily: 'Manrope, sans-serif',
+      background: s.bg, color: s.color, border: `1px solid ${s.border}`,
+    }}>
+      <span style={{
+        width: 6, height: 6, borderRadius: '50%',
+        background: s.dot, flexShrink: 0,
+      }} />
       {s.label}
     </span>
   )
 }
 
 function VatRatePill({ rate }: { rate: VatRate }) {
-  const s = VAT_RATE_STYLES[rate]
+  const s = VAT_RATE_PILL[rate]
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.pill}`}>
+    <span style={{
+      display: 'inline-flex', alignItems: 'center',
+      padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600,
+      fontFamily: 'Manrope, sans-serif',
+      background: s.bg, color: s.color, border: `1px solid ${s.border}`,
+    }}>
       {VAT_RATE_LABELS[rate]}
     </span>
   )
 }
 
 function FlagTooltip({ reason }: { reason: string }) {
+  const [visible, setVisible] = useState(false)
   return (
-    <span className="group relative ml-1.5 inline-flex cursor-default">
-      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#C45A4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <span
+      style={{ position: 'relative', marginLeft: 6, display: 'inline-flex', cursor: 'default' }}
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+    >
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24"
+           stroke={C.error} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
+        <line x1="12" y1="8"    x2="12"    y2="12" />
+        <line x1="12" y1="16"   x2="12.01" y2="16" />
       </svg>
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 rounded-lg border px-3 py-2 text-xs font-medium leading-relaxed opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100"
-            style={{ backgroundColor: '#FAF8F3', borderColor: '#E0DAD0', color: '#2B3A2E' }}>
-        {reason}
-      </span>
+      {visible && (
+        <span style={{
+          position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%',
+          transform: 'translateX(-50%)', zIndex: 20,
+          width: 224, padding: '8px 12px', borderRadius: 10,
+          fontSize: 12, fontWeight: 500, lineHeight: 1.5,
+          fontFamily: 'Manrope, sans-serif', pointerEvents: 'none',
+          background: C.parchment, color: C.forest,
+          border: `1px solid ${C.bark}`,
+          boxShadow: '0 4px 16px rgba(43,58,46,0.12)',
+        }}>
+          {reason}
+        </span>
+      )}
     </span>
   )
 }
 
-// ─── Summary bar ─────────────────────────────────────────────────────────────
+// ─── Summary bar ──────────────────────────────────────────────────────────────
+// Exported separately — render above <ReceiptTable> on your Receipts page,
+// in the same way StatCards sits above VATChart in DashboardPage.
 
-function SummaryBar({ receipts }: { receipts: Receipt[] }) {
-  const totalVat    = receipts.filter(r => r.reclaimable).reduce((s, r) => s + r.vatAmount, 0)
-  const totalSpend  = receipts.reduce((s, r) => s + r.totalAmount, 0)
-  const flagged     = receipts.filter(r => r.status === 'flagged').length
-  const pending     = receipts.filter(r => r.status === 'pending').length
+export function ReceiptSummaryBar({ receipts }: { receipts: Receipt[] }) {
+  const totalVat   = receipts.filter(r => r.reclaimable).reduce((s, r) => s + r.vatAmount, 0)
+  const totalSpend = receipts.reduce((s, r) => s + r.totalAmount, 0)
+  const flagged    = receipts.filter(r => r.status === 'flagged').length
+  const pending    = receipts.filter(r => r.status === 'pending').length
+
+  const cards = [
+    { label: 'VAT Reclaimable', value: fmt(totalVat),   sub: 'From reclaimable receipts',          accent: C.fern    },
+    { label: 'Total Spend',     value: fmt(totalSpend), sub: `Across ${receipts.length} receipts`, accent: C.forest  },
+    { label: 'Pending Review',  value: String(pending), sub: 'Awaiting confirmation',              accent: C.warning },
+    { label: 'Flagged',         value: String(flagged), sub: 'Need your attention',                accent: C.error   },
+  ]
 
   return (
-    <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {[
-        { label: 'VAT Reclaimable',  value: fmt(totalVat),       sub: 'From reclaimable receipts', accent: '#3E6B52' },
-        { label: 'Total Spend',      value: fmt(totalSpend),      sub: `Across ${receipts.length} receipts`,    accent: '#2B3A2E' },
-        { label: 'Pending Review',   value: String(pending),      sub: 'Awaiting confirmation',     accent: '#D4874A' },
-        { label: 'Flagged',          value: String(flagged),      sub: 'Need your attention',       accent: '#C45A4A' },
-      ].map(({ label, value, sub, accent }) => (
-        <div
-          key={label}
-          className="rounded-xl border p-4"
-          style={{ backgroundColor: '#FAF8F3', borderColor: '#E0DAD0' }}
-        >
-          <p className="text-xs font-medium uppercase tracking-widest" style={{ color: '#7A8A7E' }}>
-            {label}
-          </p>
-          <p className="mt-1 text-xl font-bold" style={{ color: accent, fontFamily: 'Manrope, sans-serif' }}>
-            {value}
-          </p>
-          <p className="mt-0.5 text-xs" style={{ color: '#7A8A7E' }}>{sub}</p>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+      gap: 16,
+      marginBottom: 24,
+    }}>
+      {cards.map(card => (
+        <div key={card.label} style={{
+          background: '#fff', borderRadius: 14,
+          border: `1px solid ${C.bark}`, padding: '20px 24px',
+          boxShadow: '0 2px 8px rgba(43,58,46,0.05)',
+        }}>
+          <div style={{
+            fontSize: 12, fontWeight: 600, color: C.stone,
+            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8,
+          }}>
+            {card.label}
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-source-serif), "Source Serif 4", serif',
+            fontSize: 26, fontWeight: 800, color: card.accent,
+            marginBottom: 4, lineHeight: 1,
+          }}>
+            {card.value}
+          </div>
+          <div style={{ fontSize: 12, color: C.stone }}>{card.sub}</div>
         </div>
       ))}
     </div>
@@ -161,13 +179,13 @@ function SummaryBar({ receipts }: { receipts: Receipt[] }) {
 
 // ─── Main table ───────────────────────────────────────────────────────────────
 
-export default function ReceiptHistoryTable({ receipts = DEMO_RECEIPTS }: { receipts?: Receipt[] }) {
-  const [sortKey, setSortKey] = useState<SortKey>('date')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+export default function ReceiptTable({ receipts }: { receipts: Receipt[] }) {
+  const [sortKey,      setSortKey]      = useState<SortKey>('date')
+  const [sortDir,      setSortDir]      = useState<SortDir>('desc')
   const [statusFilter, setStatusFilter] = useState<ReceiptStatus | 'all'>('all')
-  const [search, setSearch] = useState('')
+  const [search,       setSearch]       = useState('')
 
-  const handleSort = (key: SortKey) => {
+  function handleSort(key: SortKey) {
     if (sortKey === key) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     } else {
@@ -186,156 +204,176 @@ export default function ReceiptHistoryTable({ receipts = DEMO_RECEIPTS }: { rece
       return mult * ((a[sortKey] as number) - (b[sortKey] as number))
     })
 
-  const thClass = 'px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest cursor-pointer select-none whitespace-nowrap'
+  const thStyle: React.CSSProperties = {
+    padding: '10px 16px', textAlign: 'left',
+    fontSize: 11, fontWeight: 600, color: C.stone,
+    textTransform: 'uppercase', letterSpacing: '0.06em',
+    cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap',
+  }
 
   return (
-    <div className="w-full">
-      <SummaryBar receipts={receipts} />
+    <div style={{ width: '100%' }}>
 
-      {/* Toolbar */}
-      <div
-        className="mb-3 flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
-        style={{ backgroundColor: '#FAF8F3', borderColor: '#E0DAD0' }}
-      >
+      {/* ── Toolbar ─────────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+        justifyContent: 'space-between', gap: 12,
+        background: '#fff', border: `1px solid ${C.bark}`,
+        borderRadius: 14, padding: '14px 20px', marginBottom: 12,
+        boxShadow: '0 2px 8px rgba(43,58,46,0.05)',
+      }}>
+
         {/* Search */}
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#7A8A7E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <svg
+            style={{ position: 'absolute', left: 10, pointerEvents: 'none' }}
+            width="14" height="14" fill="none" viewBox="0 0 24 24"
+            stroke={C.stone} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             type="text"
             placeholder="Search vendors…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="rounded-lg border py-2 pl-8 pr-4 text-sm outline-none transition-colors duration-150 focus:border-[#6AAF7B]"
-            style={{ backgroundColor: 'white', borderColor: '#E0DAD0', color: '#2B3A2E', width: '220px' }}
+            style={{
+              paddingLeft: 32, paddingRight: 16, paddingTop: 8, paddingBottom: 8,
+              fontSize: 13, borderRadius: 10, outline: 'none',
+              border: `1px solid ${C.bark}`, background: C.parchment,
+              color: C.forest, fontFamily: 'Manrope, sans-serif',
+              width: 220, transition: 'border-color 0.15s',
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = C.clover)}
+            onBlur={e  => (e.currentTarget.style.borderColor = C.bark)}
           />
         </div>
 
-        {/* Status filter pills */}
-        <div className="flex gap-2">
-          {(['all', 'claimed', 'pending', 'flagged'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className="rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors duration-150"
-              style={{
-                backgroundColor: statusFilter === s ? '#3E6B52' : 'white',
-                color:           statusFilter === s ? 'white' : '#7A8A7E',
-                border: `1px solid ${statusFilter === s ? '#3E6B52' : '#E0DAD0'}`,
-              }}
-            >
-              {s === 'all' ? 'All' : STATUS_STYLES[s].label}
-            </button>
-          ))}
+        {/* Status filters */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {(['all', 'claimed', 'pending', 'flagged'] as const).map(s => {
+            const active = statusFilter === s
+            return (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                style={{
+                  padding: '4px 14px', borderRadius: 999,
+                  fontSize: 12, fontWeight: 600,
+                  fontFamily: 'Manrope, sans-serif',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  background: active ? C.fern : '#fff',
+                  color:      active ? '#fff' : C.stone,
+                  border:     `1px solid ${active ? C.fern : C.bark}`,
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = C.fern }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = C.bark }}
+              >
+                {s === 'all' ? 'All' : STATUS_PILL[s].label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {/* Table */}
-      <div
-        className="overflow-hidden rounded-xl border"
-        style={{ borderColor: '#E0DAD0' }}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+      {/* ── Table ───────────────────────────────────────────────────────── */}
+      <div style={{
+        background: '#fff', borderRadius: 14,
+        border: `1px solid ${C.bark}`, overflow: 'hidden',
+        boxShadow: '0 2px 8px rgba(43,58,46,0.05)',
+      }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+
             <thead>
-            <tr style={{ backgroundColor: '#F0EDE6', borderBottom: '1px solid #E0DAD0' }}>
-              <th
-                className={thClass}
-                style={{ color: '#7A8A7E' }}
-                onClick={() => handleSort('vendor')}
-              >
+            <tr style={{ background: C.parchment, borderBottom: `1px solid ${C.bark}` }}>
+              <th style={thStyle} onClick={() => handleSort('vendor')}>
                 Vendor <SortIcon active={sortKey === 'vendor'} dir={sortDir} />
               </th>
-              <th
-                className={thClass}
-                style={{ color: '#7A8A7E' }}
-                onClick={() => handleSort('date')}
-              >
+              <th style={thStyle} onClick={() => handleSort('date')}>
                 Date <SortIcon active={sortKey === 'date'} dir={sortDir} />
               </th>
-              <th
-                className={`${thClass} text-right`}
-                style={{ color: '#7A8A7E' }}
-                onClick={() => handleSort('totalAmount')}
-              >
+              <th style={{ ...thStyle, textAlign: 'right' }} onClick={() => handleSort('totalAmount')}>
                 Total <SortIcon active={sortKey === 'totalAmount'} dir={sortDir} />
               </th>
-              <th
-                className={`${thClass} text-right`}
-                style={{ color: '#7A8A7E' }}
-                onClick={() => handleSort('vatAmount')}
-              >
+              <th style={{ ...thStyle, textAlign: 'right' }} onClick={() => handleSort('vatAmount')}>
                 VAT <SortIcon active={sortKey === 'vatAmount'} dir={sortDir} />
               </th>
-              <th className={thClass} style={{ color: '#7A8A7E' }}>Rate</th>
-              <th className={thClass} style={{ color: '#7A8A7E' }}>Reclaimable</th>
-              <th className={thClass} style={{ color: '#7A8A7E' }}>Status</th>
+              <th style={thStyle}>Rate</th>
+              <th style={thStyle}>Reclaimable</th>
+              <th style={thStyle}>Status</th>
             </tr>
             </thead>
+
             <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm" style={{ color: '#7A8A7E', backgroundColor: '#FAF8F3' }}>
+                <td colSpan={7} style={{
+                  padding: '48px 24px', textAlign: 'center',
+                  fontSize: 13, color: C.stone, background: C.parchment,
+                  fontFamily: 'Manrope, sans-serif',
+                }}>
                   No receipts match your search.
                 </td>
               </tr>
             ) : (
-              filtered.map((r, i) => (
+              filtered.map(r => (
                 <tr
                   key={r.id}
-                  className="transition-colors duration-100 hover:bg-[#F0EDE6]"
-                  style={{
-                    backgroundColor: i % 2 === 0 ? '#FAF8F3' : 'white',
-                    borderBottom: '1px solid #E0DAD0',
-                  }}
+                  style={{ borderTop: `1px solid ${C.bark}`, background: '#fff', transition: 'background 0.1s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = C.parchment)}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
                 >
+
                   {/* Vendor */}
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold"
-                        style={{ backgroundColor: '#C4DCBE', color: '#3E6B52' }}
-                      >
+                  <td style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: C.lichen, color: C.fern,
+                        fontSize: 11, fontWeight: 700,
+                      }}>
                         {r.vendor.charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-medium" style={{ color: '#2B3A2E' }}>
+                      <span style={{ fontWeight: 600, color: C.forest }}>
                           {r.vendor}
                         </span>
                     </div>
                   </td>
 
                   {/* Date */}
-                  <td className="px-4 py-3.5 tabular-nums" style={{ color: '#7A8A7E' }}>
+                  <td style={{ padding: '14px 16px', color: C.stone, fontVariantNumeric: 'tabular-nums' }}>
                     {fmtDate(r.date)}
                   </td>
 
                   {/* Total */}
-                  <td className="px-4 py-3.5 text-right font-semibold tabular-nums" style={{ color: '#2B3A2E' }}>
+                  <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 600, color: C.forest, fontVariantNumeric: 'tabular-nums' }}>
                     {fmt(r.totalAmount)}
                   </td>
 
                   {/* VAT */}
-                  <td className="px-4 py-3.5 text-right font-semibold tabular-nums" style={{ color: r.vatAmount > 0 ? '#3E6B52' : '#7A8A7E' }}>
+                  <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: r.vatAmount > 0 ? C.fern : C.stone }}>
                     {fmt(r.vatAmount)}
                   </td>
 
                   {/* Rate */}
-                  <td className="px-4 py-3.5">
+                  <td style={{ padding: '14px 16px' }}>
                     <VatRatePill rate={r.vatRate} />
                   </td>
 
                   {/* Reclaimable */}
-                  <td className="px-4 py-3.5">
+                  <td style={{ padding: '14px 16px' }}>
                     {r.reclaimable ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: '#3DA06A' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: C.success }}>
                           <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                           Yes
                         </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: '#7A8A7E' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: C.stone }}>
                           <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                           </svg>
@@ -345,37 +383,41 @@ export default function ReceiptHistoryTable({ receipts = DEMO_RECEIPTS }: { rece
                   </td>
 
                   {/* Status */}
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center">
+                  <td style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
                       <StatusPill status={r.status} />
                       {r.status === 'flagged' && r.flagReason && (
                         <FlagTooltip reason={r.flagReason} />
                       )}
                     </div>
                   </td>
+
                 </tr>
               ))
             )}
             </tbody>
+
           </table>
         </div>
 
-        {/* Footer */}
-        <div
-          className="flex items-center justify-between border-t px-4 py-3"
-          style={{ backgroundColor: '#F0EDE6', borderColor: '#E0DAD0' }}
-        >
-          <p className="text-xs" style={{ color: '#7A8A7E' }}>
+        {/* ── Footer ────────────────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 20px', borderTop: `1px solid ${C.bark}`,
+          background: C.parchment,
+        }}>
+          <span style={{ fontSize: 12, color: C.stone, fontFamily: 'Manrope, sans-serif' }}>
             Showing {filtered.length} of {receipts.length} receipts
-          </p>
-          <p className="text-xs" style={{ color: '#7A8A7E' }}>
-            Total reclaimable VAT:{' '}
-            <span className="font-semibold" style={{ color: '#3E6B52' }}>
+          </span>
+          <span style={{ fontSize: 12, color: C.stone, fontFamily: 'Manrope, sans-serif' }}>
+            Reclaimable VAT:{' '}
+            <span style={{ fontWeight: 700, color: C.fern }}>
               {fmt(filtered.filter(r => r.reclaimable).reduce((s, r) => s + r.vatAmount, 0))}
             </span>
-          </p>
+          </span>
         </div>
       </div>
+
     </div>
   )
 }

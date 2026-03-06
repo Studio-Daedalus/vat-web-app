@@ -25,31 +25,26 @@ export async function POST(req: Request) {
 
     const response = NextResponse.json({ ok: true })
 
-    // Save the id-token JWT in the cookies list.
     const idToken = result.AuthenticationResult?.IdToken
-    response.cookies.set('id-token', idToken!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    })
-
-    // Save the access-token JWT in the cookies list.
     const accessToken = result.AuthenticationResult?.AccessToken
-    response.cookies.set('access-token', accessToken!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    })
-
-    // Save the refresh-token JWT in the cookies list.
     const refreshToken = result.AuthenticationResult?.RefreshToken
-    response.cookies.set('refresh-token', refreshToken!, {
+    const expiresIn = result.AuthenticationResult?.ExpiresIn ?? 3600
+
+    const baseOpts = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       path: '/',
+    }
+
+    // access-token and id-token expire when Cognito says (default 1 hour)
+    response.cookies.set('id-token', idToken!, { ...baseOpts, maxAge: expiresIn })
+    response.cookies.set('access-token', accessToken!, { ...baseOpts, maxAge: expiresIn })
+
+    // refresh-token matches Cognito's refresh token validity (default 30 days)
+    response.cookies.set('refresh-token', refreshToken!, {
+      ...baseOpts,
+      maxAge: 30 * 24 * 60 * 60,
     })
 
     return response

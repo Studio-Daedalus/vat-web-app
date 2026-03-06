@@ -1,12 +1,14 @@
-import { AppSidebarLayout } from '@/components/AppSidebar'
+import React from 'react'
+import { redirect } from 'next/navigation'
 import { GetUser } from '@/lib/server/user/getUser'
 import { Alert } from '@/components/Alert'
 import { ReceiptUploadModalProvider } from '@/components/ReceiptUploadModalContext'
-import React from 'react'
+import { DesktopSidebarLayout } from '@/components/Sidebar/DesktopSidebar'
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   const result = await GetUser()
   if (!result.ok) {
+    if (result.status === 401) redirect('/login')
     return (
       <div className="p-4">
         <Alert type={'error'} message="Something went wrong" />
@@ -17,15 +19,9 @@ export default async function UserLayout({ children }: { children: React.ReactNo
 
   return (
     <ReceiptUploadModalProvider>
-      <AppSidebarLayout
-        companyName={user.companyName ?? 'Welcome Back!'}
-        companyAvatarSrc={undefined} // or "https://.../company.png"
-        userName={user.first + ' ' + user.last}
-        userAvatarSrc={undefined} // or "https://.../me.png"
-        planName={user.planType ?? 'Free Plan'}
-      >
+      <DesktopSidebarLayout>
         {children}
-      </AppSidebarLayout>
+      </DesktopSidebarLayout>
     </ReceiptUploadModalProvider>
   )
 }

@@ -15,14 +15,17 @@
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.15",
     "clsx": "^2.1.1",
+    "heic-convert": "^2.1.0",
     "next": "16.1.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "recharts": "^3.7.0",
     "swr": "^2.4.0",
     "tailwindcss": "^4.1.15",
     "typescript": "^5.8.3"
   },
   "devDependencies": {
+    "@types/heic-convert": "^2.1.0",
     "@types/node": "^24.1.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",

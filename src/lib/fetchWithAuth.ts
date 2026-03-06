@@ -47,6 +47,12 @@ export async function fetchApiWithAutoRefresh(
         accessToken = newAccess
         res = await doFetch(accessToken) // ✅ retry using new token directly
       }
+    } else {
+      // Refresh token is invalid/expired — clear all auth cookies so the
+      // browser doesn't keep sending stale tokens on every future request.
+      cookieStore.delete('access-token')
+      cookieStore.delete('id-token')
+      cookieStore.delete('refresh-token')
     }
   }
 

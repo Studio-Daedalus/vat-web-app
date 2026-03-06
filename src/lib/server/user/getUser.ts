@@ -21,7 +21,6 @@ export async function GetUser(): Promise<GetUserResult> {
     const cookieStore = await cookies()
     const token = cookieStore.get('id-token')
 
-    console.log('url: ', `${process.env.API_BASE_URL}/user`)
     const res = await fetchApiWithAutoRefresh(
       `${process.env.API_BASE_URL}/user`,
       {
