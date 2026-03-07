@@ -22,12 +22,12 @@ export async function createUploadUrl(
   input: CreateUploadUrlInput,
 ): Promise<CreateUploadUrlResult> {
   try {
-    if (!input?.filename || typeof input.filename !== 'string') {
+    if (!input?.filename) {
       return { ok: false, status: 400, message: 'filename is required' }
     }
 
     const cookieStore = await cookies()
-    const token = cookieStore.get('id-token')
+    const token = cookieStore.get('access-token')
 
     const res = await fetchApiWithAutoRefresh(
       `${process.env.API_BASE_URL}/receipts/uploadURL`,

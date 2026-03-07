@@ -8,7 +8,7 @@
 
 export type VatRate = 'standard' | 'reduced' | 'zero' | 'exempt'
 export type VatStagger = 1 | 2 | 3 // HMRC VAT stagger group
-export type ReceiptStatus = 'claimed' | 'pending' | 'flagged'
+export type ReceiptStatus = 'COMPLETE' | 'PROCESSING' | 'UPLOADED' | 'FAILED'
 
 // ─── Core entities ────────────────────────────────────────────────────────────
 

@@ -1,12 +1,12 @@
 'use client'
 
 import React from 'react'
-import { type Receipt } from '@/types'
 import { C } from '@/styles/colours'
 import ReceiptTable from '@/components/ReceiptTable'
+import { ReceiptAPIResponse } from '@/types/api'
 
 export type ReceiptsPageProps = {
-  receipts: Receipt[]
+  receipts: ReceiptAPIResponse[]
 }
 
 export default function ReceiptsPage({ receipts = [] }: ReceiptsPageProps) {

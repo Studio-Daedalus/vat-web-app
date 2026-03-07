@@ -25,28 +25,27 @@ export type ApiResponse<T> =
 
 // GET /api/receipts
 // GET /api/receipts?status=flagged&from=2026-01-01&to=2026-03-31
-export type ReceiptApiResponse = {
+export type ReceiptAPIResponse = {
   id: string
-  vendor: string
-  date: string // ISO 8601
-  total_amount: number // Go uses snake_case JSON tags
-  vat_amount: number
-  vat_rate: VatRate
-  reclaimable: boolean
   status: ReceiptStatus
-  flag_reason: string | null
-  category: string | null
-  image_key: string | null
   created_at: string // ISO 8601
+  vendor: string | null
+  vendor_vat_no: string | null
+  receipt_date: string | null // ISO 8601
+  currency: string | null
+  gross_total: number | null
+  vat_amount: number | null
+  net_amount: number | null
+  category: string | null
+  confidence: string | null
+  parse_notes: string[] | null
+  vat_issues: string[] | null
 }
 
-export type ListReceiptsResponse = {
-  receipts: ReceiptApiResponse[]
-  total: number
-  page: number
-  page_size: number
+export type ReceiptListResponse = {
+  count: number
+  receipts: ReceiptAPIResponse[]
 }
-
 // POST /api/receipts/upload — presigned URL request
 export type CreateUploadUrlRequest = {
   filename: string

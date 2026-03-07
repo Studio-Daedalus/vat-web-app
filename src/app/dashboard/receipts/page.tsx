@@ -1,11 +1,10 @@
 import ReceiptsPage from '@/containers/ReceiptsPage/ReceiptsPage'
-import { sampleReceiptsResponse } from '@/types/SampleAPIResponses'
+import { GetAllReceipts } from '@/lib/server/receipts/getAllReceipts'
 import { transformReceiptsList } from '@/types/transformers'
 
-export default function Receipts() {
-  const receiptData = sampleReceiptsResponse.data
-  if (!receiptData) throw new Error('No receipt data')
-  const receipts = transformReceiptsList(receiptData)
+export default async function Receipts() {
+  const result = await GetAllReceipts()
+  if (!result.ok) throw new Error(result.message)
 
-  return <ReceiptsPage receipts={receipts} />
+  return <ReceiptsPage receipts={result.data.receipts} />
 }
