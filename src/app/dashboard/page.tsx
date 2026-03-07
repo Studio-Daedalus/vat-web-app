@@ -1,16 +1,18 @@
 import DashboardPage from '@/containers/DashboardPage/DashboardPage'
-import {
-  sampleDashboardResponse,
-  sampleUserResponse,
-} from '@/types/SampleAPIResponses'
+import { sampleDashboardResponse } from '@/types/SampleAPIResponses'
 import {
   transformDashboardStats,
   transformTrend,
 } from '@/types/transformers'
+import { GetUser } from '@/lib/server/user/getUser'
+
+export const dynamic = 'force-dynamic'
 
 export default async function Dashboard() {
+  const result = await GetUser()
+  if (!result.ok) throw new Error(result.message)
+
   // (Sample data) fetch from API here
-  const userData = sampleUserResponse.data
   const dashboardData = sampleDashboardResponse.data
   if (!dashboardData) throw new Error('No dashboard data')
 
@@ -20,7 +22,7 @@ export default async function Dashboard() {
 
   return (
     <DashboardPage
-      userName={userData?.first_name}
+      userName={result.user.first}
       stats={stats}
       trendData={trend}
     />
