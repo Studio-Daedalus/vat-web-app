@@ -1,6 +1,5 @@
 import ReceiptsPage from '@/containers/ReceiptsPage/ReceiptsPage'
 import { GetAllReceipts } from '@/lib/server/receipts/getAllReceipts'
-import { transformReceiptsList } from '@/types/transformers'
 
 export default async function Receipts() {
   const result = await GetAllReceipts()

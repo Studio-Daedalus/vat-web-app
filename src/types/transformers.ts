@@ -4,12 +4,8 @@
 // that UI components expect. This is the only place snake_case→camelCase
 // conversion should happen.
 
-import type {
-  DashboardApiResponse,
-  ReceiptListResponse,
-  ReceiptAPIResponse,
-} from '@/types/api'
-import type { DashboardStats, TrendPoint, Receipt } from '@/types'
+import type { DashboardApiResponse } from '@/types/api'
+import type { DashboardStats, TrendPoint } from '@/types'
 
 const fmt = (n: number) =>
   n.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })
