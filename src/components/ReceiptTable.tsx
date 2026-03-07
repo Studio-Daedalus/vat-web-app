@@ -106,15 +106,16 @@ function FlagTooltip({ reason }: { reason: string }) {
 // Exported separately — render above <ReceiptTable> on your Receipts page,
 // in the same way StatCards sits above VATChart in DashboardPage.
 
-export function ReceiptSummaryBar({ receipts }: { receipts: ReceiptAPIResponse[] }) {
-  const totalVat   = receipts.reduce((s, r) => s + (r.vat_amount ?? 0), 0)
-  const totalSpend = receipts.reduce((s, r) => s + (r.gross_total ?? 0), 0)
-  const flagged    = receipts.filter(r => (r.vat_issues?.length ?? 0) > 0).length
-  const pending    = receipts.filter(r => r.status === 'PROCESSING').length
+export function ReceiptSummaryBar({ receipts = [] }: { receipts: ReceiptAPIResponse[] }) {
+  const safeReceipts = receipts ?? []
+  const totalVat   = safeReceipts.reduce((s, r) => s + (r.vat_amount ?? 0), 0)
+  const totalSpend = safeReceipts.reduce((s, r) => s + (r.gross_total ?? 0), 0)
+  const flagged    = safeReceipts.filter(r => (r.vat_issues?.length ?? 0) > 0).length
+  const pending    = safeReceipts.filter(r => r.status === 'PROCESSING').length
 
   const cards = [
     { label: 'VAT Reclaimable', value: fmt(totalVat),   sub: 'From reclaimable receipts',          accent: C.fern    },
-    { label: 'Total Spend',     value: fmt(totalSpend), sub: `Across ${receipts.length} receipts`, accent: C.forest  },
+    { label: 'Total Spend',     value: fmt(totalSpend), sub: `Across ${safeReceipts.length} receipts`, accent: C.forest  },
     { label: 'Pending Review',  value: String(pending), sub: 'Awaiting confirmation',              accent: C.warning },
     { label: 'Flagged',         value: String(flagged), sub: 'Need your attention',                accent: C.error   },
   ]
@@ -154,7 +155,7 @@ export function ReceiptSummaryBar({ receipts }: { receipts: ReceiptAPIResponse[]
 
 // ─── Main table ───────────────────────────────────────────────────────────────
 
-export default function ReceiptTable({ receipts }: { receipts: ReceiptAPIResponse[] }) {
+export default function ReceiptTable({ receipts = [] }: { receipts: ReceiptAPIResponse[] }) {
   const [sortKey, setSortKey] = useState<SortKey>('receipt_date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [statusFilter, setStatusFilter] = useState<ReceiptStatus | 'all'>('all')
@@ -169,7 +170,7 @@ export default function ReceiptTable({ receipts }: { receipts: ReceiptAPIRespons
     }
   }
 
-  const filtered = receipts
+  const filtered = (receipts ?? [])
     .filter((r) => statusFilter === 'all' || r.status === statusFilter)
     .filter((r) => (r.vendor ?? '').toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
@@ -193,6 +194,9 @@ export default function ReceiptTable({ receipts }: { receipts: ReceiptAPIRespons
     userSelect: 'none',
     whiteSpace: 'nowrap',
   }
+
+  const filteredCount = filtered?.length ?? 0
+  const receiptCount = receipts?.length ?? 0
 
   return (
     <div style={{ width: '100%' }}>
@@ -319,7 +323,8 @@ export default function ReceiptTable({ receipts }: { receipts: ReceiptAPIRespons
                   <SortIcon active={sortKey === 'vendor'} dir={sortDir} />
                 </th>
                 <th style={thStyle} onClick={() => handleSort('receipt_date')}>
-                  Date <SortIcon active={sortKey === 'receipt_date'} dir={sortDir} />
+                  Date{' '}
+                  <SortIcon active={sortKey === 'receipt_date'} dir={sortDir} />
                 </th>
                 <th
                   style={{ ...thStyle, textAlign: 'right' }}
@@ -353,7 +358,9 @@ export default function ReceiptTable({ receipts }: { receipts: ReceiptAPIRespons
                       fontFamily: 'Manrope, sans-serif',
                     }}
                   >
-                    No receipts match your search.
+                    {receiptCount == 0
+                      ? 'No receipts yet. Upload your first receipt to get started!'
+                      : 'No receipts match your search.'}
                   </td>
                 </tr>
               ) : (
@@ -475,7 +482,7 @@ export default function ReceiptTable({ receipts }: { receipts: ReceiptAPIRespons
               fontFamily: 'Manrope, sans-serif',
             }}
           >
-            Showing {filtered.length} of {receipts.length} receipts
+            Showing {filtered.length} of {(receipts ?? []).length} receipts
           </span>
           <span
             style={{
