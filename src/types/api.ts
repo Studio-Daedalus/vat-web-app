@@ -25,27 +25,27 @@ export type ApiResponse<T> =
 
 // GET /api/receipts
 // GET /api/receipts?status=flagged&from=2026-01-01&to=2026-03-31
-export type ReceiptAPIResponse = {
+export type ReceiptApiResponse = {
   id: string
-  status: ReceiptStatus
+  status: 'COMPLETE' | 'PROCESSING' | 'UPLOADED' | 'FAILED'
   created_at: string // ISO 8601
   vendor: string | null
-  vendor_vat_no: string | null
   receipt_date: string | null // ISO 8601
-  currency: string | null
+  currency: string
   gross_total: number | null
   vat_amount: number | null
   net_amount: number | null
   category: string | null
-  confidence: string | null
-  parse_notes: string[] | null
-  vat_issues: string[] | null
+  vat_issues?: string[] | null
 }
 
-export type ReceiptListResponse = {
-  count: number
-  receipts: ReceiptAPIResponse[]
+export type ListReceiptsResponse = {
+  receipts: ReceiptApiResponse[]
+  total: number
+  page: number
+  page_size: number
 }
+
 // POST /api/receipts/upload — presigned URL request
 export type CreateUploadUrlRequest = {
   filename: string
@@ -58,7 +58,7 @@ export type CreateUploadUrlResponse = {
   expires_at: string // ISO 8601 — URL expiry
 }
 
-// ─── DashboardPage ────────────────────────────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 
 // GET /api/dashboard?from=2026-01-01&to=2026-03-31
 export type DashboardApiResponse = {
@@ -75,6 +75,7 @@ export type DashboardApiResponse = {
     date: string // Display label
     vat: number // Cumulative VAT at this point
   }[]
+  recent_receipts: ReceiptApiResponse[]
   stats: {
     vat_reclaimed: number
     pending_count: number
@@ -88,13 +89,39 @@ export type DashboardApiResponse = {
 // GET /api/user/me
 export type UserApiResponse = {
   id: string
-  first_name: string
-  last_name: string
-  occupation: string
+  name: string
   email: string
   vat_number: string | null
   stagger: VatStagger
   plan_tier: 'free' | 'core' | 'pro'
   scans_used: number
   scans_limit: number
+}
+
+// ─── Single receipt ────────────────────────────────────────────────────────────
+
+// GET /api/receipts/:id
+// The real shape returned by the backend for a single receipt.
+export type ReceiptStatus_API =
+  | 'COMPLETE'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'FAILED'
+
+export type GetReceiptResponse = {
+  id: string
+  status: ReceiptStatus_API
+  created_at: string // ISO 8601
+  vendor: string
+  vendor_vat_no: string | null
+  receipt_date: string // ISO 8601 — "2025-12-04"
+  currency: string // e.g. "GBP"
+  gross_total: number // Total inc. VAT
+  vat_amount: number
+  net_amount: number // Total ex. VAT
+  category: string | null
+  parse_notes: string[] // AI-generated observations
+  vat_issues: string[]
+  confidence: 'high' | 'medium' | 'low'
+  s3_presigned_url: string | null // Expires — use immediately, don't store
 }

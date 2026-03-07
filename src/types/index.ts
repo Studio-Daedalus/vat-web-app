@@ -47,7 +47,7 @@ export type User = {
   scansLimit: number
 }
 
-// ─── DashboardPage-specific view types ───────────────────────────────────────────
+// ─── Dashboard-specific view types ───────────────────────────────────────────
 // Derived/aggregated data shaped for the dashboard UI.
 // These are NOT raw API responses — see api.ts for those.
 
@@ -69,4 +69,32 @@ export type DashboardStats = {
 export type TrendPoint = {
   date: string // Display label: "1 Jan"
   vat: number // Cumulative VAT reclaimed at this point
+}
+
+// ─── Single receipt detail ────────────────────────────────────────────────────
+// Richer type used on the ReceiptInfo page.
+// Transformed from GetReceiptResponse in transformers.ts.
+
+export type ReceiptDetailStatus =
+  | 'COMPLETE'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'FAILED'
+export type ReceiptConfidence = 'high' | 'medium' | 'low'
+
+export type ReceiptDetail = {
+  id: string
+  status: ReceiptDetailStatus
+  createdAt: string // ISO 8601
+  vendor: string
+  vendorVatNo: string | null
+  date: string // ISO 8601 — "2025-12-04"
+  currency: string
+  grossTotal: number // Total inc. VAT
+  vatAmount: number
+  netAmount: number // Total ex. VAT
+  category: string | null
+  parseNotes: string[]
+  confidence: ReceiptConfidence
+  imageUrl: string | null // Pre-signed S3 URL — use immediately
 }

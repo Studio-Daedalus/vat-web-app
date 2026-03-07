@@ -1,9 +1,20 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import { C } from '@/components/Sidebar/icons'
-import type { ReceiptStatus } from '@/types'
-import type { ReceiptAPIResponse } from '@/types/api'
+
+type ReceiptTableStatus = 'COMPLETE' | 'PROCESSING' | 'UPLOADED' | 'FAILED'
+
+export type ReceiptTableRow = {
+  id: string
+  status: ReceiptTableStatus
+  receipt_date: string | null
+  vendor: string | null
+  gross_total: number | null
+  vat_amount: number | null
+  vat_issues?: string[] | null
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -19,11 +30,10 @@ const fmtDate = (iso: string) =>
 
 type PillStyle = { bg: string; color: string; border: string }
 
-// TODO : Fix the colours
-const STATUS_PILL: Record<ReceiptStatus, PillStyle & { dot: string; label: string }> = {
+const STATUS_PILL: Record<ReceiptTableStatus, PillStyle & { dot: string; label: string }> = {
   COMPLETE:   { bg: `${C.success}18`, color: C.success, border: `${C.success}40`, dot: C.success, label: 'Complete'      },
-  PROCESSING: { bg: `${C.warning}18`, color: C.warning, border: `${C.warning}40`, dot: C.warning, label: 'Processing...' },
-  UPLOADED:   { bg: `${C.error}15`,   color: C.forest,  border: `${C.error}40`,   dot: C.error,   label: 'Uploaded'      },
+  PROCESSING: { bg: `${C.warning}18`, color: C.warning, border: `${C.warning}40`, dot: C.warning, label: 'Processing' },
+  UPLOADED:   { bg: `${C.stone}18`,   color: C.stone,   border: `${C.stone}40`,   dot: C.stone,   label: 'Uploaded'      },
   FAILED:     { bg: `${C.error}15`,   color: C.error,   border: `${C.error}40`,   dot: C.error,   label: 'Failed'        },
 }
 
@@ -52,7 +62,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   )
 }
 
-function StatusPill({ status }: { status: ReceiptStatus }) {
+function StatusPill({ status }: { status: ReceiptTableStatus }) {
   const s = STATUS_PILL[status]
   return (
     <span style={{
@@ -106,7 +116,7 @@ function FlagTooltip({ reason }: { reason: string }) {
 // Exported separately — render above <ReceiptTable> on your Receipts page,
 // in the same way StatCards sits above VATChart in DashboardPage.
 
-export function ReceiptSummaryBar({ receipts = [] }: { receipts: ReceiptAPIResponse[] }) {
+export function ReceiptSummaryBar({ receipts = [] }: { receipts: ReceiptTableRow[] }) {
   const safeReceipts = receipts ?? []
   const totalVat   = safeReceipts.reduce((s, r) => s + (r.vat_amount ?? 0), 0)
   const totalSpend = safeReceipts.reduce((s, r) => s + (r.gross_total ?? 0), 0)
@@ -155,10 +165,10 @@ export function ReceiptSummaryBar({ receipts = [] }: { receipts: ReceiptAPIRespo
 
 // ─── Main table ───────────────────────────────────────────────────────────────
 
-export default function ReceiptTable({ receipts = [] }: { receipts: ReceiptAPIResponse[] }) {
+export default function ReceiptTable({ receipts = [] }: { receipts: ReceiptTableRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey>('receipt_date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [statusFilter, setStatusFilter] = useState<ReceiptStatus | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<ReceiptTableStatus | 'all'>('all')
   const [search, setSearch] = useState('')
 
   function handleSort(key: SortKey) {
@@ -341,6 +351,7 @@ export default function ReceiptTable({ receipts = [] }: { receipts: ReceiptAPIRe
                   <SortIcon active={sortKey === 'vat_amount'} dir={sortDir} />
                 </th>
                 <th style={thStyle}>Status</th>
+                <th style={thStyle} />
               </tr>
             </thead>
 
@@ -348,7 +359,7 @@ export default function ReceiptTable({ receipts = [] }: { receipts: ReceiptAPIRe
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     style={{
                       padding: '48px 24px',
                       textAlign: 'center',
@@ -456,6 +467,35 @@ export default function ReceiptTable({ receipts = [] }: { receipts: ReceiptAPIRe
                           <FlagTooltip reason={r.vat_issues![0]} />
                         )}
                       </div>
+                    </td>
+
+                    {/* View */}
+                    <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                      <Link
+                        href={`/dashboard/receipts/${r.id}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: '4px 12px',
+                          borderRadius: 8,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          fontFamily: 'Manrope, sans-serif',
+                          color: C.fern,
+                          border: `1px solid ${C.lichen}`,
+                          background: C.lichen + '40',
+                          textDecoration: 'none',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        View
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor" strokeWidth="2.5"
+                             strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                      </Link>
                     </td>
                   </tr>
                 ))

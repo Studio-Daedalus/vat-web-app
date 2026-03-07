@@ -3,10 +3,10 @@
 import React from 'react'
 import { C } from '@/styles/colours'
 import ReceiptTable from '@/components/ReceiptTable'
-import { ReceiptAPIResponse } from '@/types/api'
+import { ReceiptApiResponse } from '@/types/api'
 
 export type ReceiptsPageProps = {
-  receipts: ReceiptAPIResponse[]
+  receipts: ReceiptApiResponse[]
 }
 
 export default function ReceiptsPage({ receipts = [] }: ReceiptsPageProps) {

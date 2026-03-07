@@ -71,30 +71,6 @@ export function transformDashboardStats(
   }
 }
 
-// ─── Receipts ─────────────────────────────────────────────────────────────────
-
-// // Shared row mapper — used by both transformers below.
-// function mapReceipt(r: ReceiptAPIResponse): Receipt {
-//   return {
-//     id: r.id,
-//     vendor: r.vendor,
-//     date: r.date, // kept as ISO — components format for display
-//     totalAmount: r.total_amount,
-//     vatAmount: r.vat_amount,
-//     vatRate: r.vat_rate,
-//     reclaimable: r.reclaimable,
-//     status: r.status,
-//     flagReason: r.flag_reason ?? undefined,
-//     category: r.category ?? undefined,
-//     imageKey: r.image_key ?? undefined,
-//   }
-// }
-//
-// // Used on the Receipts page (full ListReceiptsResponse from sampleReceiptsResponse)
-// export function transformReceiptsList(data: ListReceiptsResponse): Receipt[] {
-//   return data.receipts.map(mapReceipt)
-// }
-
 // ─── Trend ────────────────────────────────────────────────────────────────────
 
 export function transformTrend(
