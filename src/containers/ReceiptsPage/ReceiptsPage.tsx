@@ -3,13 +3,13 @@
 import React from 'react'
 import { C } from '@/styles/colours'
 import ReceiptTable from '@/components/ReceiptTable'
-import { ReceiptApiResponse } from '@/types/api'
+import { SearchUserReceiptsResponse } from '@/types/api'
 
 export type ReceiptsPageProps = {
-  receipts: ReceiptApiResponse[]
+  data: SearchUserReceiptsResponse
 }
 
-export default function ReceiptsPage({ receipts = [] }: ReceiptsPageProps) {
+export default function ReceiptsPage({ data }: ReceiptsPageProps) {
   return (
     <div
       style={{
@@ -41,7 +41,7 @@ export default function ReceiptsPage({ receipts = [] }: ReceiptsPageProps) {
           </p>
         </div>
 
-        <ReceiptTable receipts={receipts} />
+        <ReceiptTable data={data} />
       </main>
     </div>
   )

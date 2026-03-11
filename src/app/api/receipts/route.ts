@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { GetAllReceipts } from '@/lib/server/receipts/getAllReceipts'
+import { SearchUserReceipts } from '@/lib/server/receipts/searchUserReceipts'
 
 export async function GET() {
-  const result = await GetAllReceipts()
+  const result = await SearchUserReceipts()
 
   if (!result.ok) {
     return NextResponse.json(

@@ -22,9 +22,9 @@ export default async function Dashboard() {
 
   return (
     <DashboardPage
-      userName={result.user.first}
       stats={stats}
       trendData={trend}
+      user={result.user}
     />
   )
 }

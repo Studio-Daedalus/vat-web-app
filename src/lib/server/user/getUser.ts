@@ -1,19 +1,9 @@
 import { cookies } from 'next/headers'
 import { fetchApiWithAutoRefresh } from '@/lib/fetchWithAuth'
-
-export type User = {
-  sub: string
-  email: string
-  first: string
-  last: string
-  companyName?: string
-  planType?: string
-  created_at: string
-  updated_at: string
-}
+import { GetUserResponse } from '@/types/api'
 
 export type GetUserResult =
-  | { ok: true; user: User }
+  | { ok: true; user: GetUserResponse }
   | { ok: false; status: number; message: string }
 
 export async function GetUser(): Promise<GetUserResult> {
@@ -42,7 +32,7 @@ export async function GetUser(): Promise<GetUserResult> {
       }
     }
 
-    const data = (await res.json()) as User
+    const data = (await res.json()) as GetUserResponse
     return { ok: true, user: data }
   } catch {
     return {

@@ -21,7 +21,56 @@ export type ApiResponse<T> =
   | { ok: true; data: T; error: null }
   | { ok: false; data: null; error: { code: string; message: string } }
 
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+// GET /api/user/getUser
+export type GetUserResponse = {
+  subID: string
+  email: string
+  first: string
+  last: string
+  occupation?: string
+  monthlyRequests: number
+  createdAt: string // ISO 8601
+  updatedAt: string // ISO 8601
+}
+
 // ─── Receipts ─────────────────────────────────────────────────────────────────
+
+// GET /api/receipts
+export type SearchUserReceiptsResponse = {
+  Records: SearchUserReceiptsItem[]
+  NextToken: string
+}
+
+export type SearchUserReceiptsItem = {
+  receiptId: string
+  userId: string
+  scannedAt: string // ISO 8601 timestamp
+  ocrConfidence: number // 0–100
+  vendorName: string
+  vendorVatNumber?: string // omitempty → optional
+  vendorVatNumberValid?: boolean // omitempty → optional
+  transactionDate: string // "YYYY-MM-DD"
+  transactionTime?: string // omitempty → optional, "HH:MM:SS"
+  currency: string // e.g. "GBP"
+  totalNet: number
+  totalVat: number
+  totalGross: number
+  reclaimableVat: number
+  nonReclaimableVat: number
+  partialVatPending: number
+  effectiveReclaimPct: number // 0.0–1.0 or 0–100, confirm with backend
+  riskFlagsJson: string // Raw JSON string — parse before use
+  status: ReceiptStatus_Backend
+}
+
+export type ReceiptStatus_Backend =
+  | 'COMPLETE'
+  | 'PENDING'
+  | 'FLAGGED'
+  | 'PROCESSING'
+  | 'ERROR'
 
 // GET /api/receipts
 // GET /api/receipts?status=flagged&from=2026-01-01&to=2026-03-31
@@ -39,12 +88,7 @@ export type ReceiptApiResponse = {
   vat_issues?: string[] | null
 }
 
-export type ListReceiptsResponse = {
-  receipts: ReceiptApiResponse[]
-  total: number
-  page: number
-  page_size: number
-}
+
 
 // POST /api/receipts/upload — presigned URL request
 export type CreateUploadUrlRequest = {
@@ -84,44 +128,115 @@ export type DashboardApiResponse = {
   }
 }
 
-// ─── User ─────────────────────────────────────────────────────────────────────
 
-// GET /api/user/me
-export type UserApiResponse = {
-  id: string
-  name: string
-  email: string
-  vat_number: string | null
-  stagger: VatStagger
-  plan_tier: 'free' | 'core' | 'pro'
-  scans_used: number
-  scans_limit: number
-}
 
-// ─── Single receipt ────────────────────────────────────────────────────────────
+// ─── Single receipt ───────────────────────────────────────────────────────────
 
 // GET /api/receipts/:id
-// The real shape returned by the backend for a single receipt.
-export type ReceiptStatus_API =
-  | 'COMPLETE'
-  | 'PENDING'
+// Mirrors the UserReceipt Go struct exactly.
+export type UserReceiptStatus =
+  | 'PENDING_REVIEW'   // AI parsed; ≥1 item unresolved
+  | 'REVIEWED'         // all items resolved; ready to add to return
+  | 'ADDED_TO_RETURN'  // included in a VAT return period
+  | 'EXCLUDED'         // user chose not to include
   | 'PROCESSING'
   | 'FAILED'
 
-export type GetReceiptResponse = {
-  id: string
-  status: ReceiptStatus_API
-  created_at: string // ISO 8601
-  vendor: string
-  vendor_vat_no: string | null
-  receipt_date: string // ISO 8601 — "2025-12-04"
-  currency: string // e.g. "GBP"
-  gross_total: number // Total inc. VAT
-  vat_amount: number
-  net_amount: number // Total ex. VAT
-  category: string | null
-  parse_notes: string[] // AI-generated observations
-  vat_issues: string[]
-  confidence: 'high' | 'medium' | 'low'
-  s3_presigned_url: string | null // Expires — use immediately, don't store
+export type VATRateLabel =
+  | 'standard'
+  | 'reduced'
+  | 'zero'
+  | 'exempt'
+  | 'unknown'
+
+export type Reclaimable =
+  | 'full'
+  | 'partial'   // user must confirm before use in return
+  | 'none'
+  | 'unknown'
+
+export type LineItemFlag =
+  | 'NO_VAT_NUMBER'
+  | 'MIXED_USE'
+  | 'PERSONAL_ITEM'
+  | 'ENTERTAINMENT'
+  | 'REVERSE_CHARGE'
+  | 'ZERO_RATED'
+  | 'EXEMPT_SUPPLY'
+  | 'HIGH_VALUE'
+  | 'CIS_LABOUR'
+  | 'SUBSISTENCE'
+
+export type LineItemApiResponse = {
+  id:               number
+  description:      string
+  category:         string
+  quantity:         number
+  unit_price_net:   number
+  line_net:         number
+  vat_rate_pct:     number
+  vat_rate_label:   VATRateLabel
+  vat_amount:       number
+  line_gross:       number
+  reclaimable:      Reclaimable
+  reclaim_pct:      number | null   // null = pending user review
+  reclaim_amount:   number | null   // null when reclaim_pct is null
+  reclaim_reason:   string
+  reclaim_caveat?:  string          // omitempty
+  hmrc_reference?:  string          // omitempty
+  flags:            LineItemFlag[]
+}
+
+export type GetUserReceiptResponse = {
+  // ── Identity ───────────────────────────────────────────────────────
+  receiptId:                string
+  userId:                   string
+  status:                   UserReceiptStatus
+  createdAt:                string        // ISO 8601
+  updatedAt:                string        // ISO 8601
+  scannedAt:                string        // ISO 8601
+
+  // ── Vendor ─────────────────────────────────────────────────────────
+  vendorName:               string
+  vendorAddress?:           string        // omitempty
+  vendorVatNumber?:         string        // omitempty
+  vendorVatNumberValid?:    boolean       // omitempty
+  vendorPhone?:             string        // omitempty
+  vendorWebsite?:           string        // omitempty
+
+  // ── Transaction ────────────────────────────────────────────────────
+  transactionDate:          string        // "YYYY-MM-DD"
+  transactionTime?:         string        // omitempty, "HH:MM:SS"
+  transactionReceiptNumber?: string       // omitempty
+  paymentMethod?:           string        // omitempty
+  currency:                 string        // e.g. "GBP"
+
+  // ── Totals ─────────────────────────────────────────────────────────
+  totalNet:                 number
+  totalVat:                 number
+  totalGross:               number
+  reclaimableVat:           number
+  nonReclaimableVat:        number
+  partialVatPending:        number        // >0 means partial items need user confirmation
+  effectiveReclaimPct:      number        // 0.0–1.0
+
+  // ── VAT metadata ───────────────────────────────────────────────────
+  ocrConfidence:            number        // 0–100
+  riskFlagsJson:            string        // Raw JSON string — parse before use
+  vatSchemeNote?:           string        // omitempty
+  reverseChargeApplicable:  boolean
+  receiptLevelIssues?:      string        // omitempty — pipe-separated or prose
+  parseNotes?:              string        // omitempty
+  suggestedChatQuestions?:  string[]      // omitempty
+
+  // ── Return tracking ────────────────────────────────────────────────
+  vatReturnPeriod?:         string        // omitempty — e.g. "2026-Q1"
+  addedToReturn:            boolean
+
+  // ── User data ──────────────────────────────────────────────────────
+  userNotes?:               string        // omitempty
+  imageURL:                 string        // S3 presigned URL — use immediately
+
+  // ── Line items ─────────────────────────────────────────────────────
+  lineItems:                LineItemApiResponse[]
 }

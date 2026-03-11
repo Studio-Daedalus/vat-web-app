@@ -1,12 +1,12 @@
 import { cookies } from 'next/headers'
 import { fetchApiWithAutoRefresh } from '@/lib/fetchWithAuth'
-import type { ListReceiptsResponse } from '@/types/api'
+import { SearchUserReceiptsResponse } from '@/types/api'
 
 export type GetAllReceiptsResult =
-  | { ok: true; data: ListReceiptsResponse }
+  | { ok: true; data: SearchUserReceiptsResponse }
   | { ok: false; status: number; message: string }
 
-export async function GetAllReceipts(): Promise<GetAllReceiptsResult> {
+export async function SearchUserReceipts(): Promise<GetAllReceiptsResult> {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get('access-token')
@@ -24,7 +24,7 @@ export async function GetAllReceipts(): Promise<GetAllReceiptsResult> {
 
     const json = await res.json().catch(() => null)
 
-    if (!res.ok) {
+    if (!res.ok || json === null) {
       return {
         ok: false,
         status: res.status,
@@ -32,7 +32,7 @@ export async function GetAllReceipts(): Promise<GetAllReceiptsResult> {
       }
     }
 
-    return { ok: true, data: json as ListReceiptsResponse }
+    return { ok: true, data: json as SearchUserReceiptsResponse }
   } catch {
     return { ok: false, status: 500, message: 'Internal server error' }
   }

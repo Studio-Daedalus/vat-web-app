@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers'
 import { fetchApiWithAutoRefresh } from '@/lib/fetchWithAuth'
-import type { GetReceiptResponse } from '@/types/api'
+import { GetUserReceiptResponse } from '@/types/api'
 
 export type GetReceiptResult =
-  | { ok: true; data: GetReceiptResponse }
+  | { ok: true; data: GetUserReceiptResponse }
   | { ok: false; status: number; message: string }
 
 export async function GetReceipt(id: string): Promise<GetReceiptResult> {
@@ -24,7 +24,7 @@ export async function GetReceipt(id: string): Promise<GetReceiptResult> {
 
     const json = await res.json().catch(() => null)
 
-    if (!res.ok) {
+    if (!res.ok || json === null) {
       return {
         ok: false,
         status: res.status,
@@ -32,7 +32,7 @@ export async function GetReceipt(id: string): Promise<GetReceiptResult> {
       }
     }
 
-    return { ok: true, data: json.receipt as GetReceiptResponse }
+    return { ok: true, data: json as GetUserReceiptResponse }
   } catch {
     return { ok: false, status: 500, message: 'Internal server error' }
   }

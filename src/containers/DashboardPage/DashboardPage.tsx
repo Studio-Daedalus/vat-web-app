@@ -1,23 +1,29 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { C } from '@/components/Sidebar/icons'
 import { StatCards } from './StatCards'
 import { VATChart } from './StatChart'
 import { IconCalendar } from './icons/CalendarIcon'
 import { DashboardStats, type TrendPoint } from '@/types'
+import CompleteProfilePopup from './CompleteProfilePopup'
+import { GetUserResponse } from '@/types/api'
 
 export type DashboardPageProps = {
-  userName?: string
   stats: DashboardStats
   trendData: TrendPoint[]
+  user?: GetUserResponse
 }
 
 export default function DashboardPage({
-  userName = 'there',
   stats,
   trendData,
+  user,
 }: DashboardPageProps) {
+  const [showPopup, setShowPopup] = useState(
+    !!user && !user.occupation,
+  )
+
   return (
     <div
       style={{
@@ -28,6 +34,14 @@ export default function DashboardPage({
         background: C.parchment,
       }}
     >
+      {showPopup && user && (
+        <CompleteProfilePopup
+          email={user.email}
+          first={user.first}
+          last={user.last}
+          onDismiss={() => setShowPopup(false)}
+        />
+      )}
       {/* ── Main content ──────────────────────────────────────────────── */}
       <main style={{ flex: 1, overflowY: 'auto', padding: 32 }}>
         {/* Header */}
@@ -42,7 +56,7 @@ export default function DashboardPage({
               marginBottom: 6,
             }}
           >
-            Welcome back{userName !== 'there' ? `, ${userName}` : ''}
+            Welcome back{user?.first !== '' ? `, ${user?.first}` : 'there'}
           </h1>
           <p style={{ fontSize: 14, color: C.stone }}>
             Here's what's happening with your VAT this quarter
