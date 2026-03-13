@@ -63,6 +63,7 @@ export type SearchUserReceiptsItem = {
   effectiveReclaimPct: number // 0.0–1.0 or 0–100, confirm with backend
   riskFlagsJson: string // Raw JSON string — parse before use
   status: ReceiptStatus_Backend
+  addedToReturn: boolean
 }
 
 export type ReceiptStatus_Backend =
@@ -128,7 +129,20 @@ export type DashboardApiResponse = {
   }
 }
 
+// POST /api/receipts/lineItem/update
+export type UpdateLineItemRequest = {
+  reclaimPct: number
+  userJustification?: string
+}
 
+// POST /api/receipts/:id/update
+export type UpdateReceiptRequest = {
+  userSubID: string
+  receiptID: string
+  addedToReturn: boolean
+}
+
+export type UpdateReceiptResponse = Record<string, never>
 
 // ─── Single receipt ───────────────────────────────────────────────────────────
 
@@ -168,23 +182,25 @@ export type LineItemFlag =
   | 'SUBSISTENCE'
 
 export type LineItemApiResponse = {
-  id:               number
-  description:      string
-  category:         string
-  quantity:         number
-  unit_price_net:   number
-  line_net:         number
-  vat_rate_pct:     number
-  vat_rate_label:   VATRateLabel
-  vat_amount:       number
-  line_gross:       number
-  reclaimable:      Reclaimable
-  reclaim_pct:      number | null   // null = pending user review
-  reclaim_amount:   number | null   // null when reclaim_pct is null
-  reclaim_reason:   string
-  reclaim_caveat?:  string          // omitempty
-  hmrc_reference?:  string          // omitempty
-  flags:            LineItemFlag[]
+  id:                 number
+  description:        string
+  category:           string
+  quantity:           number
+  unit_price_net:     number
+  line_net:           number
+  vat_rate_pct:       number
+  vat_rate_label:     VATRateLabel
+  vat_amount:         number
+  line_gross:         number
+  reclaimable:        Reclaimable
+  reclaim_pct:        number | null   // null = pending user review
+  reclaim_amount:     number | null   // null when reclaim_pct is null
+  reclaim_reason:     string
+  reclaim_caveat?:    string          // omitempty
+  hmrc_reference?:    string          // omitempty
+  flags:              LineItemFlag[]
+  user_validated:     boolean
+  user_justification: string | null
 }
 
 export type GetUserReceiptResponse = {

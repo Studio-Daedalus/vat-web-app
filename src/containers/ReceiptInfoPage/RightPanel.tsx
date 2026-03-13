@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { C } from '@/styles/colours'
 import type { GetUserReceiptResponse, LineItemApiResponse } from '@/types/api'
 import {
@@ -273,12 +274,380 @@ function ReclaimBadge({ reclaimable }: { reclaimable: string }) {
   )
 }
 
+type CaveatDecision = 'none' | 'accepted' | 'caveat'
+type SubmitState = 'idle' | 'loading' | 'success' | 'error'
+
+const PCT_LABEL: { max: number; label: string; color: string }[] = [
+  { max: 20,  label: 'Predominantly personal use',          color: C.error },
+  { max: 45,  label: 'Mostly personal, some business use',  color: C.warning },
+  { max: 55,  label: 'Equal personal and business use',     color: C.stone },
+  { max: 80,  label: 'Mostly business, some personal benefit', color: C.fern },
+  { max: 99,  label: 'Predominantly business use',          color: C.fern },
+  { max: 100, label: 'Fully business use',                  color: C.success },
+]
+
+function pctLabel(pct: number) {
+  return PCT_LABEL.find((p) => pct <= p.max) ?? PCT_LABEL[PCT_LABEL.length - 1]
+}
+
+function CaveatControls({
+  caveat,
+  receiptId,
+  itemIndex,
+  initialPct,
+  userJustification,
+  rationalePlaceholder,
+}: {
+  caveat: string
+  receiptId: string
+  itemIndex: number
+  initialPct?: number | null
+  userJustification?: string | null
+  rationalePlaceholder?: string | null
+}) {
+  const router = useRouter()
+  const [decision, setDecision] = useState<CaveatDecision>('none')
+  const [pct, setPct] = useState(initialPct ?? 50)
+  const [justification, setJustification] = useState(userJustification ?? '')
+  const [submitState, setSubmitState] = useState<SubmitState>('idle')
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const handleConfirm = async () => {
+    setSubmitState('loading')
+    setErrorMsg(null)
+    const res = await fetch(`/api/receipts/${receiptId}/lineItem/${itemIndex}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        receiptID: receiptId,
+        index: itemIndex,
+        reclaimPct: pct,
+        userJustification: justification.trim() || undefined,
+      }),
+    })
+    if (!res.ok) {
+      const json = await res.json().catch(() => null)
+      setErrorMsg(json?.error ?? 'Failed to save')
+      setSubmitState('error')
+      return
+    }
+    setSubmitState('success')
+    router.refresh()
+  }
+
+  const label = pctLabel(pct)
+
+  return (
+    <div
+      style={{
+        marginTop: 4,
+        padding: '12px 14px',
+        borderRadius: 8,
+        background: `${C.warning}10`,
+        border: `1px solid ${C.warning}30`,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}
+    >
+      {/* Caveat text */}
+      <p style={{ fontSize: 12, color: C.warning, margin: 0, lineHeight: 1.65 }}>
+        <span style={{ fontWeight: 700 }}>Caveat: </span>
+        {caveat}
+      </p>
+
+      {/* Initial choice */}
+      {decision === 'none' && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setDecision('accepted')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: 'Manrope, sans-serif',
+              background: C.fern,
+              color: '#fff',
+              border: `1px solid ${C.fern}`,
+              cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = C.forest)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = C.fern)}
+          >
+            Accept rationale
+          </button>
+          <button
+            onClick={() => setDecision('caveat')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: 'Manrope, sans-serif',
+              background: '#fff',
+              color: C.warning,
+              border: `1px solid ${C.warning}60`,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = `${C.warning}10`
+              e.currentTarget.style.borderColor = C.warning
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#fff'
+              e.currentTarget.style.borderColor = `${C.warning}60`
+            }}
+          >
+            Caveat applies
+          </button>
+        </div>
+      )}
+
+      {/* Accepted */}
+      {decision === 'accepted' && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: C.success }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Rationale accepted
+          <button
+            onClick={() => setDecision('none')}
+            style={{ marginLeft: 4, fontSize: 11, color: C.stone, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Manrope, sans-serif' }}
+          >
+            undo
+          </button>
+        </div>
+      )}
+
+      {/* Caveat applies — percentage input */}
+      {decision === 'caveat' && submitState !== 'success' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Big % display + contextual label */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: '#fff',
+              border: `1px solid ${C.bark}`,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-source-serif), "Source Serif 4", serif',
+                fontSize: 32,
+                fontWeight: 800,
+                color: label.color,
+                fontVariantNumeric: 'tabular-nums',
+                lineHeight: 1,
+                transition: 'color 0.2s',
+              }}
+            >
+              {pct}%
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: label.color,
+                textAlign: 'right',
+                maxWidth: 160,
+                lineHeight: 1.4,
+                transition: 'color 0.2s',
+              }}
+            >
+              {label.label}
+            </span>
+          </div>
+
+          {/* Preset quick-picks */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[0, 25, 50, 75, 100].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => setPct(preset)}
+                style={{
+                  flex: 1,
+                  padding: '5px 0',
+                  borderRadius: 7,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'Manrope, sans-serif',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  background: pct === preset ? C.fern : '#fff',
+                  color: pct === preset ? '#fff' : C.stone,
+                  border: `1px solid ${pct === preset ? C.fern : C.bark}`,
+                }}
+              >
+                {preset}%
+              </button>
+            ))}
+          </div>
+
+          {/* Slider */}
+          <div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={pct}
+              onChange={(e) => setPct(Number(e.target.value))}
+              style={{ width: '100%', accentColor: C.fern }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.stone, marginTop: 2 }}>
+              <span>0% — personal</span>
+              <span>100% — business</span>
+            </div>
+          </div>
+
+          {/* Guidance */}
+          <div
+            style={{
+              padding: '10px 12px',
+              borderRadius: 7,
+              background: `${C.fern}08`,
+              border: `1px solid ${C.fern}25`,
+              fontSize: 11,
+              color: C.forest,
+              lineHeight: 1.65,
+            }}
+          >
+            <p style={{ margin: '0 0 5px', fontWeight: 700, color: C.fern, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              What percentage should I enter?
+            </p>
+            <p style={{ margin: '0 0 3px' }}><span style={{ fontWeight: 600 }}>100%</span> — wholly for business (e.g. a hotel room on a work trip, a receipt for office supplies).</p>
+            <p style={{ margin: '0 0 3px' }}><span style={{ fontWeight: 600 }}>50–75%</span> — mainly business with some personal benefit (e.g. a work dinner where a personal guest attended, or home broadband used mostly for work).</p>
+            <p style={{ margin: 0 }}><span style={{ fontWeight: 600 }}>0–25%</span> — mainly personal with incidental business use (e.g. a mobile contract used mostly personally). HMRC typically disallows claims below a justifiable threshold.</p>
+          </div>
+
+          {/* Justification notes */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 11,
+                fontWeight: 700,
+                color: C.stone,
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+                marginBottom: 5,
+              }}
+            >
+              Justification notes <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+            </label>
+            <textarea
+              value={justification}
+              onChange={(e) => setJustification(e.target.value)}
+              placeholder={rationalePlaceholder ?? 'e.g. Attended client dinner — 3 of 5 guests were clients, 2 were personal contacts.'}
+              rows={3}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                borderRadius: 8,
+                border: `1px solid ${C.bark}`,
+                background: '#fff',
+                fontSize: 12,
+                color: C.forest,
+                fontFamily: 'Manrope, sans-serif',
+                resize: 'vertical',
+                outline: 'none',
+                lineHeight: 1.6,
+                boxSizing: 'border-box',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = C.clover)}
+              onBlur={(e) => (e.currentTarget.style.borderColor = C.bark)}
+            />
+            <p style={{ margin: '4px 0 0', fontSize: 11, color: C.stone, lineHeight: 1.5 }}>
+              A brief note helps explain your decision in the event of an HMRC enquiry. While optional, it is strongly recommended for mixed-use items.
+            </p>
+          </div>
+
+          {/* Error */}
+          {submitState === 'error' && errorMsg && (
+            <p style={{ margin: 0, fontSize: 12, color: C.error, fontWeight: 600 }}>{errorMsg}</p>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setDecision('none')}
+              disabled={submitState === 'loading'}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 7,
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: 'Manrope, sans-serif',
+                background: '#fff',
+                color: C.stone,
+                border: `1px solid ${C.bark}`,
+                cursor: 'pointer',
+                opacity: submitState === 'loading' ? 0.5 : 1,
+              }}
+            >
+              Back
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={submitState === 'loading'}
+              style={{
+                padding: '6px 16px',
+                borderRadius: 7,
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: 'Manrope, sans-serif',
+                background: C.fern,
+                color: '#fff',
+                border: `1px solid ${C.fern}`,
+                cursor: submitState === 'loading' ? 'not-allowed' : 'pointer',
+                opacity: submitState === 'loading' ? 0.7 : 1,
+                transition: 'background 0.15s',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+              onMouseEnter={(e) => { if (submitState !== 'loading') e.currentTarget.style.background = C.forest }}
+              onMouseLeave={(e) => { if (submitState !== 'loading') e.currentTarget.style.background = C.fern }}
+            >
+              {submitState === 'loading' && (
+                <span style={{ width: 11, height: 11, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+              )}
+              Confirm {pct}%
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Success */}
+      {decision === 'caveat' && submitState === 'success' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: C.success }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Saved — {pct}% business use recorded
+        </div>
+      )}
+    </div>
+  )
+}
+
 function LineItemRow({
   item,
   currency,
+  receiptId,
 }: {
   item: LineItemApiResponse
   currency: string
+  receiptId: string
 }) {
   const [expanded, setExpanded] = useState(false)
   const hasDetail = !!(
@@ -462,17 +831,14 @@ function LineItemRow({
               )}
 
               {item.reclaim_caveat && (
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: C.warning,
-                    margin: 0,
-                    lineHeight: 1.65,
-                  }}
-                >
-                  <span style={{ fontWeight: 600 }}>Caveat: </span>
-                  {item.reclaim_caveat}
-                </p>
+                <CaveatControls
+                  caveat={item.reclaim_caveat}
+                  receiptId={receiptId}
+                  itemIndex={item.id}
+                  initialPct={item.reclaim_pct}
+                  userJustification={item.user_justification}
+                  rationalePlaceholder={item.reclaim_reason}
+                />
               )}
 
               {item.hmrc_reference && (
@@ -600,7 +966,7 @@ function LineItemsTab({ r }: { r: GetUserReceiptResponse }) {
             </thead>
             <tbody>
               {r.lineItems.map((item) => (
-                <LineItemRow key={item.id} item={item} currency={r.currency} />
+                <LineItemRow key={item.id} item={item} currency={r.currency} receiptId={r.receiptId} />
               ))}
             </tbody>
             <tfoot>
@@ -657,7 +1023,7 @@ function LineItemsTab({ r }: { r: GetUserReceiptResponse }) {
                     color: C.fern,
                   }}
                 >
-                  {fmt(r.reclaimableVat, r.currency)}
+                  {fmt(r.lineItems.reduce((sum, i) => sum + (i.reclaim_amount ?? 0), 0), r.currency)}
                 </td>
               </tr>
             </tfoot>
@@ -976,7 +1342,6 @@ function NotesTab({
         >
           <button
             onClick={() => {
-              console.log('save notes', r.receiptId, notes)
               onSaveNotes(notes)
             }}
             style={{

@@ -94,7 +94,7 @@ export const RECLAIM_CONFIG: Record<
   { color: string; label: string }
 > = {
   full: { color: C.success, label: 'Fully reclaimable' },
-  partial: { color: C.warning, label: 'Partial — review needed' },
+  partial: { color: C.warning, label: 'Partial' },
   none: { color: C.stone, label: 'Not reclaimable' },
   unknown: { color: C.error, label: 'Unknown' },
 }
@@ -328,11 +328,13 @@ export function ActionButton({
   variant,
   onClick,
   icon,
+  disabled,
 }: {
   label: string
   variant: 'primary' | 'secondary' | 'danger' | 'ghost'
   onClick: () => void
   icon?: React.ReactNode
+  disabled?: boolean
 }) {
   const styles: Record<string, React.CSSProperties> = {
     primary: {
@@ -358,17 +360,18 @@ export function ActionButton({
   }
   const hover: Record<string, React.CSSProperties> = {
     primary: { background: C.forest },
-    secondary: { borderColor: C.stone, background: C.parchment },
+    secondary: { border: `1px solid ${C.stone}`, background: C.parchment },
     danger: { background: `${C.error}18` },
-    ghost: { borderColor: C.stone, color: C.forest },
+    ghost: { border: `1px solid ${C.stone}`, color: C.forest },
   }
 
   const [hovered, setHovered] = React.useState(false)
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => { if (!disabled) setHovered(true) }}
       onMouseLeave={() => setHovered(false)}
+      disabled={disabled}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -378,9 +381,10 @@ export function ActionButton({
         fontSize: 13,
         fontWeight: 600,
         fontFamily: 'Manrope, sans-serif',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
         transition: 'all 0.15s',
-        ...(hovered
+        ...(hovered && !disabled
           ? { ...styles[variant], ...hover[variant] }
           : styles[variant]),
       }}

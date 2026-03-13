@@ -39,7 +39,6 @@ export function guessFileType(file: File): string {
   if (parts.length < 2) return ''
 
   const ext = parts.pop()
-  console.log('ext: ', ext)
 
   // Map extensions → MIME types
   const mimeMap: Record<string, string> = {

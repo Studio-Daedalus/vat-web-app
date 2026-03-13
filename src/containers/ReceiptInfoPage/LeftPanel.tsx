@@ -221,7 +221,7 @@ export function LeftPanel({ receipt }: { receipt: GetUserReceiptResponse }) {
 
         <ScoreRow
           label="Reclaimable VAT"
-          value={fmt(receipt.reclaimableVat, receipt.currency)}
+          value={fmt(receipt.lineItems.reduce((sum, i) => sum + (i.reclaim_amount ?? 0), 0), receipt.currency)}
           valueColor={C.success}
           sub={`${fmtPct(receipt.effectiveReclaimPct)} effective reclaim`}
         />

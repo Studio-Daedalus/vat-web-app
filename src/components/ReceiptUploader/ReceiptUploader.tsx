@@ -6,7 +6,9 @@ import {
   guessContentType,
   guessFileType
 } from '@/components/ReceiptUploader/utils'
-import { normaliseImageFile, isHeic } from '@/components/ReceiptUploader/converters/heicConverter'
+import { normaliseImageFile, isHeic, compressImageToLimit } from '@/components/ReceiptUploader/converters/heicConverter'
+
+const MAX_FILE_BYTES = 4 * 1024 * 1024 // 4 MB
 
 export default function ReceiptUploader() {
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -38,6 +40,7 @@ export default function ReceiptUploader() {
 
   const prepareFile = async (f: File | null) => {
     if (!f) return handleFile(null)
+
     if (isHeic(f)) {
       setIsConverting(true)
       try {
@@ -51,6 +54,21 @@ export default function ReceiptUploader() {
       } finally {
         setIsConverting(false)
       }
+    } else if (f.type.startsWith('image/') && f.size > MAX_FILE_BYTES) {
+      setIsConverting(true)
+      try {
+        handleFile(await compressImageToLimit(f))
+      } catch (e: any) {
+        setError(
+          e?.message ?? 'Could not compress image. Please reduce the file size below 4 MB.',
+        )
+        handleFile(null)
+      } finally {
+        setIsConverting(false)
+      }
+    } else if (f.size > MAX_FILE_BYTES) {
+      setError('File is too large. Please keep files under 4 MB.')
+      handleFile(null)
     } else {
       handleFile(f)
     }
@@ -249,7 +267,7 @@ export default function ReceiptUploader() {
               </span>
             </p>
             <p className="text-xs" style={{ color: '#7A8A7E' }}>
-              JPG, PNG, PDF or HEIC · up to 10 MB
+              JPG, PNG, PDF or HEIC · up to 4 MB
             </p>
           </>
         )}

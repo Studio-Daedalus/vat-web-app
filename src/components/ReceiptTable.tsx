@@ -134,44 +134,6 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   )
 }
 
-function StatusPill({ status }: { status: ReceiptStatus_Backend }) {
-  const s = STATUS[status] ?? {
-    bg: `${C.stone}15`,
-    color: C.stone,
-    border: `${C.stone}40`,
-    dot: C.stone,
-    label: status,
-  }
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 5,
-        padding: '2px 10px',
-        borderRadius: 999,
-        fontSize: 11,
-        fontWeight: 600,
-        fontFamily: 'Manrope, sans-serif',
-        background: s.bg,
-        color: s.color,
-        border: `1px solid ${s.border}`,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      <span
-        style={{
-          width: 5,
-          height: 5,
-          borderRadius: '50%',
-          background: s.dot,
-          flexShrink: 0,
-        }}
-      />
-      {s.label}
-    </span>
-  )
-}
 
 function ConfidenceBadge({ value }: { value: number }) {
   // value: 0–100
@@ -203,7 +165,7 @@ function ConfidenceBadge({ value }: { value: number }) {
 }
 
 function RiskBadge({ json }: { json: string }) {
-  const flags = parseRiskFlags(json)
+  const flags = parseRiskFlags(json).filter((f) => f.severity !== 'info')
   if (flags.length === 0)
     return <span style={{ fontSize: 12, color: C.stone }}>—</span>
   const hasHigh = flags.some((f) => f.severity === 'high')
@@ -242,23 +204,60 @@ function RiskBadge({ json }: { json: string }) {
   )
 }
 
-function ActionIndicator({ status }: { status: ReceiptStatus_Backend }) {
-  if (!needsAction(status)) return null
-  const isFlagged = status === 'FLAGGED'
-  const color = isFlagged ? C.error : C.warning
-  const bg = isFlagged ? `${C.error}12` : `${C.warning}12`
-  const border = isFlagged ? `${C.error}30` : `${C.warning}30`
-  const label = isFlagged ? 'Review required' : 'Action needed'
+
+// ─── Receipt status badge ─────────────────────────────────────────────────────
+// Derives a display status from flags + addedToReturn, independent of backend status.
+
+function ReceiptStatusBadge({
+  riskFlagsJson,
+  addedToReturn,
+}: {
+  riskFlagsJson: string
+  addedToReturn: boolean
+}) {
+  const nonInfoFlags = parseRiskFlags(riskFlagsJson).filter(
+    (f) => f.severity !== 'info',
+  )
+
+  let label: string
+  let color: string
+  let bg: string
+  let border: string
+  let dot: string
+
+  console.log('addedToReturn: ', addedToReturn)
+  console.log('nonInfoFlags: ', nonInfoFlags.length)
+
+  if (addedToReturn) {
+    label = 'Added to return'
+    color = C.success
+    bg = `${C.success}18`
+    border = `${C.success}40`
+    dot = C.success
+  } else if (nonInfoFlags.length > 0) {
+    label = 'Review needed'
+    color = C.error
+    bg = `${C.error}15`
+    border = `${C.error}40`
+    dot = C.error
+  } else {
+    label = 'Pending approval'
+    color = C.warning
+    bg = `${C.warning}18`
+    border = `${C.warning}40`
+    dot = C.warning
+  }
+
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: 5,
-        padding: '3px 10px',
+        padding: '2px 10px',
         borderRadius: 999,
         fontSize: 11,
-        fontWeight: 700,
+        fontWeight: 600,
         fontFamily: 'Manrope, sans-serif',
         background: bg,
         color,
@@ -266,20 +265,15 @@ function ActionIndicator({ status }: { status: ReceiptStatus_Backend }) {
         whiteSpace: 'nowrap',
       }}
     >
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
+      <span
+        style={{
+          width: 5,
+          height: 5,
+          borderRadius: '50%',
+          background: dot,
+          flexShrink: 0,
+        }}
+      />
       {label}
     </span>
   )
@@ -315,7 +309,7 @@ function VendorAvatar({ name }: { name: string }) {
 function EmptyState({ hasFilters }: { hasFilters: boolean }) {
   return (
     <tr>
-      <td colSpan={7} style={{ padding: '56px 24px', background: C.parchment }}>
+      <td colSpan={8} style={{ padding: '56px 24px', background: C.parchment }}>
         <div
           style={{
             display: 'flex',
@@ -361,6 +355,108 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
   )
 }
 
+// ─── Processing row ───────────────────────────────────────────────────────────
+
+function ProcessingRow({ receiptId }: { receiptId: string }) {
+  const shimmer: React.CSSProperties = {
+    background: `linear-gradient(90deg, ${C.bark}40 25%, ${C.bark}80 50%, ${C.bark}40 75%)`,
+    backgroundSize: '200% 100%',
+    animation: 'shimmer 1.4s infinite',
+    borderRadius: 6,
+    height: 14,
+    display: 'inline-block',
+  }
+  return (
+    <tr
+      style={{
+        borderTop: `1px solid ${C.bark}`,
+        background: `${C.stone}06`,
+        cursor: 'default',
+        boxShadow: `inset 3px 0 0 ${C.stone}60`,
+      }}
+    >
+      {/* Vendor */}
+      <td style={{ padding: '13px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              flexShrink: 0,
+              background: `${C.bark}60`,
+            }}
+          />
+          <div
+            style={{
+              fontWeight: 600,
+              color: C.forest,
+              lineHeight: 1.3,
+            }}
+          >
+            {'Processing...'}
+          </div>
+          <span style={{ ...shimmer, width: 100 }} />
+        </div>
+      </td>
+      {/* Date */}
+      <td style={{ padding: '13px 16px' }}>
+        <span style={{ ...shimmer, width: 80 }} />
+      </td>
+      {/* Gross */}
+      <td style={{ padding: '13px 16px', textAlign: 'right' }}>
+        <span style={{ ...shimmer, width: 60 }} />
+      </td>
+      {/* VAT */}
+      <td style={{ padding: '13px 16px', textAlign: 'right' }}>
+        <span style={{ ...shimmer, width: 50 }} />
+      </td>
+      {/* Reclaimable */}
+      <td style={{ padding: '13px 16px', textAlign: 'right' }}>
+        <span style={{ ...shimmer, width: 60 }} />
+      </td>
+      {/* OCR */}
+      <td style={{ padding: '13px 16px', textAlign: 'center' }}>
+        <span style={{ ...shimmer, width: 36 }} />
+      </td>
+      {/* Flags */}
+      <td style={{ padding: '13px 16px', textAlign: 'center' }}>
+        <span style={{ fontSize: 12, color: C.stone }}>—</span>
+      </td>
+      {/* Status */}
+      <td style={{ padding: '13px 16px', textAlign: 'right' }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '2px 10px',
+            borderRadius: 999,
+            fontSize: 11,
+            fontWeight: 600,
+            fontFamily: 'Manrope, sans-serif',
+            background: `${C.stone}15`,
+            color: C.stone,
+            border: `1px solid ${C.stone}40`,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: C.stone,
+              flexShrink: 0,
+            }}
+          />
+          Processing
+        </span>
+      </td>
+    </tr>
+  )
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export type ReceiptsTableProps = {
@@ -377,7 +473,7 @@ export default function ReceiptsTable({ data }: ReceiptsTableProps) {
   const [statusFilter, setStatusFilter] = useState<
     ReceiptStatus_Backend | 'ALL'
   >('ALL')
-
+  console.log("data: ", data)
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     else {
@@ -390,7 +486,7 @@ export default function ReceiptsTable({ data }: ReceiptsTableProps) {
 
   const filtered = records
     .filter((r) => statusFilter === 'ALL' || r.status === statusFilter)
-    .filter((r) => r.vendorName.toLowerCase().includes(search.toLowerCase()))
+    .filter((r) => r.status === 'PROCESSING' || r.vendorName.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       const m = sortDir === 'asc' ? 1 : -1
       if (sortKey === 'vendorName')
@@ -427,6 +523,7 @@ export default function ReceiptsTable({ data }: ReceiptsTableProps) {
 
   return (
     <div style={{ width: '100%' }}>
+      <style>{`@keyframes shimmer { 0%,100%{background-position:200% 0} 50%{background-position:0% 0} }`}</style>
       {/* ── Toolbar ─────────────────────────────────────────────────────── */}
       <div
         style={{
@@ -655,6 +752,9 @@ export default function ReceiptsTable({ data }: ReceiptsTableProps) {
                 />
               ) : (
                 filtered.map((r) => {
+                  if (r.status === 'PROCESSING') {
+                    return <ProcessingRow key={r.receiptId} receiptId={r.receiptId} />
+                  }
                   const action = needsAction(r.status)
                   return (
                     <tr
@@ -828,17 +928,10 @@ export default function ReceiptsTable({ data }: ReceiptsTableProps) {
 
                       {/* Status + action */}
                       <td style={{ padding: '13px 16px', textAlign: 'right' }}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-end',
-                            gap: 5,
-                          }}
-                        >
-                          <StatusPill status={r.status} />
-                          <ActionIndicator status={r.status} />
-                        </div>
+                        <ReceiptStatusBadge
+                          riskFlagsJson={r.riskFlagsJson}
+                          addedToReturn={r.addedToReturn}
+                        />
                       </td>
                     </tr>
                   )

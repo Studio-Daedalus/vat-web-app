@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { C } from '@/styles/colours'
 import type { GetUserReceiptResponse } from '@/types/api'
 import { STATUS_CONFIG, StatusPill, ActionButton } from './atoms'
@@ -51,9 +52,55 @@ function BackButton({ onClick }: { onClick: () => void }) {
 
 // ─── Action bar ───────────────────────────────────────────────────────────────
 
+async function callUpdateReceipt(
+  receiptId: string,
+  userId: string,
+  addedToReturn: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch(`/api/receipts/${receiptId}/update`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userSubID: userId, receiptID: receiptId, addedToReturn }),
+  })
+  const json = await res.json().catch(() => null)
+  if (!res.ok) return { ok: false, error: json?.error ?? 'Failed to update receipt' }
+  return { ok: true }
+}
+
 function ActionBar({ receipt }: { receipt: GetUserReceiptResponse }) {
   const { status } = receipt
   const needsAction = STATUS_CONFIG[status]?.needsAction
+  const router = useRouter()
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [updateError, setUpdateError] = useState<string | null>(null)
+
+  const handleRemoveFromReturn = async () => {
+    setIsUpdating(true)
+    setUpdateError(null)
+    const result = await callUpdateReceipt(
+      receipt.receiptId,
+      receipt.userId,
+      false,
+    )
+    if (result.ok) {
+      router.refresh()
+    } else {
+      setUpdateError(result.error ?? 'Something went wrong')
+    }
+    setIsUpdating(false)
+  }
+
+  const handleAddToReturn = async () => {
+    setIsUpdating(true)
+    setUpdateError(null)
+    const result = await callUpdateReceipt(receipt.receiptId, receipt.userId, true)
+    if (result.ok) {
+      router.refresh()
+    } else {
+      setUpdateError(result.error ?? 'Something went wrong')
+    }
+    setIsUpdating(false)
+  }
 
   // Always render — shrinks gracefully when no actions needed
   return (
@@ -117,58 +164,61 @@ function ActionBar({ receipt }: { receipt: GetUserReceiptResponse }) {
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {/* Mark as reviewed — shown when pending */}
-        {status === 'PENDING_REVIEW' && (
-          <ActionButton
-            label="Mark as Reviewed"
-            variant="primary"
-            icon={
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            }
-            onClick={() => console.log('markAsReviewed', receipt.receiptId)}
-          />
-        )}
+        {/*{status === 'PENDING_REVIEW' && (*/}
+        {/*  <ActionButton*/}
+        {/*    label="Mark as Reviewed"*/}
+        {/*    variant="primary"*/}
+        {/*    icon={*/}
+        {/*      <svg*/}
+        {/*        width="14"*/}
+        {/*        height="14"*/}
+        {/*        viewBox="0 0 24 24"*/}
+        {/*        fill="none"*/}
+        {/*        stroke="currentColor"*/}
+        {/*        strokeWidth="2.5"*/}
+        {/*        strokeLinecap="round"*/}
+        {/*        strokeLinejoin="round"*/}
+        {/*      >*/}
+        {/*        <polyline points="20 6 9 17 4 12" />*/}
+        {/*      </svg>*/}
+        {/*    }*/}
+        {/*    onClick={handleMarkAsReviewed}*/}
+        {/*    disabled={isUpdating}*/}
+        {/*  />*/}
+        {/*)}*/}
 
         {/* Add to return — shown when reviewed */}
-        {status === 'REVIEWED' && !receipt.addedToReturn && (
-          <ActionButton
-            label="Add to VAT Return"
-            variant="primary"
-            icon={
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            }
-            onClick={() => console.log('addToReturn', receipt.receiptId)}
-          />
-        )}
+        <ActionButton
+          label={
+            receipt.addedToReturn ? 'Added to Return' : 'Add to VAT Return'
+          }
+          variant="primary"
+          icon={
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          }
+          onClick={handleAddToReturn}
+          disabled={isUpdating || receipt.addedToReturn}
+        />
 
         {/* Remove from return */}
         {status === 'ADDED_TO_RETURN' && (
           <ActionButton
             label="Remove from Return"
             variant="secondary"
-            onClick={() => console.log('removeFromReturn', receipt.receiptId)}
+            onClick={handleRemoveFromReturn}
+            disabled={isUpdating}
           />
         )}
 
@@ -192,6 +242,19 @@ function ActionBar({ receipt }: { receipt: GetUserReceiptResponse }) {
           />
         )}
       </div>
+      {updateError && (
+        <p
+          style={{
+            fontSize: 12,
+            color: C.error,
+            marginTop: 8,
+            width: '100%',
+            textAlign: 'right',
+          }}
+        >
+          {updateError}
+        </p>
+      )}
     </div>
   )
 }
